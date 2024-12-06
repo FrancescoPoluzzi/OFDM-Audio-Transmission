@@ -1,4 +1,4 @@
-function [beginning_of_data, phase_of_peak, magnitude_of_peak] = frame_sync(rx_signal, L, detection_threshold, frame_sync_length)
+function [beginning_of_data, phase_of_peak, magnitude_of_peak, found] = frame_sync(rx_signal, L, detection_threshold, frame_sync_length)
 % Full function for frame synchronization. It handles preamble generation,
 % correlation for frame detection, estimation of initial phase offset, and
 % estimation oof the channel's magnitude (for receiver's diversity)
@@ -43,10 +43,14 @@ for i = L * frame_sync_length + 1 : length(rx_signal)
             current_peak_value = T;
         end
         if (samples_after_threshold == 0)
+            found = 1;
             return;
         end
     end
 end
-
-error('No synchronization sequence found.');
+found = 0;
+beginning_of_data = 0;
+phase_of_peak = 0;
+magnitude_of_peak = 0;
+warning('No synchronization sequence found.');
 return

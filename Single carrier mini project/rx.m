@@ -13,7 +13,7 @@ function [rxbits conf] = rx(rxsignal,conf,k)
     %   rxbits      : received bits
     %   conf        : configuration structure
     %
-    frame_detection_threshold = 50;
+    frame_detection_threshold = 150;
     preamble = lfsr_framesync(conf.npreamble); % generate preamble of 100 bits (no need to map for bpsk)
     preamble_bpsk = -2 .* preamble + 1;
     
@@ -21,8 +21,12 @@ function [rxbits conf] = rx(rxsignal,conf,k)
     
     rxsymbols = lowpass(rxsymbols, conf);
     
-    [start_idx, phase_of_peak, ~] = frame_sync(rxsymbols, conf.os_factor, frame_detection_threshold, conf.npreamble);
-    
+    found = 0;
+    while(found == 0)
+        [start_idx, phase_of_peak, ~, found] = frame_sync(rxsymbols, conf.os_factor, frame_detection_threshold, conf.npreamble);
+        frame_detection_threshold = frame_detection_threshold - 10;
+    end
+
     filtered_rx_symbols = matched_filter(rxsymbols, conf.os_factor, 20);
     
     cum_err = 0;
@@ -49,13 +53,12 @@ function [rxbits conf] = rx(rxsignal,conf,k)
                      (1-1j)/sqrt(2), (-1-1j)/sqrt(2)];
     bit_pairs = [0 0; 0 1; 1 0 ; 1 1];
     
-    %rxbits = reshape(demapper_general(phase_corrected_rx_symbols, constellation, bit_pairs).', [], 1);
-    %rxbits = not(rxbits);
-    
+    rxbits = reshape(demapper_general(phase_corrected_rx_symbols, constellation, bit_pairs).', [], 1);
+
     %payload = downsample(filtered_rx_symbols(start_idx:start_idx+conf.nsyms*conf.os_factor-1), conf.os_factor);
     %rxbits = reshape(demapper_general(payload, constellation, bit_pairs).', [], 1);
     
-    rxbits = reshape(demapper_general(timing_corrected_rx_symbols, constellation, bit_pairs).', [], 1);
+    %rxbits = reshape(demapper_general(timing_corrected_rx_symbols, constellation, bit_pairs).', [], 1);
 
     % dummy 
     %rxbits = zeros(conf.nbits,1);

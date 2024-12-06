@@ -11,9 +11,9 @@
 %   - 'bypass' : no audio transmission, takes txsignal as received signal
 
 % Configuration Values
-conf.audiosystem ='bypass';% 'matlab'; % Values: 'matlab','native','bypass'
+%conf.audiosystem ='bypass';% 'matlab'; % Values: 'matlab','native','bypass'
 %conf.audiosystem ='native';
-%conf.audiosystem ='matlab';
+conf.audiosystem ='matlab';
 
 symbol_rates =  [ 50  100  200   400   600    800  1000  1200  1500  1600   2000];
 BER_values = zeros(length(symbol_rates));
