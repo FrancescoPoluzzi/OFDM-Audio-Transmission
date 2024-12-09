@@ -6,7 +6,7 @@ function Y = osfft(X,OS_FACTOR)
 %
 Nos = length(X);
 
-N = Nos / OS_FACTOR;
+N = ceil(Nos / OS_FACTOR);
 
 center = ceil(N/2);
 

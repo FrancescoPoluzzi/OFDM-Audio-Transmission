@@ -1,0 +1,37 @@
+function [txsignal, conf] = tx_OFDM_payload_symbol(txbits,conf,k)
+% Digital Transmitter
+%
+%   [txsignal conf] = tx_OFDM_payload_symbol(txbits,conf,k) transmit a OFDM
+%   payload symbol
+%   
+%
+
+payload_symbol = qpsk_modulator(txbits(k: k+conf.nbits-1)); % map payload bits
+payload_ofdm_symbol = osifft(payload_symbol, conf.os_factor); % inverse descrete fourier tranform
+
+cp_ofdm_symbol = zeros(1, length(payload_ofdm_symbols)+conf.cp_len);
+cyclic_prefix = payload_ofdm_symbol(end-conf.cp_len+1: end);
+cp_ofdm_symbol(1:conf.cp_len) = cyclic_prefix; % get cyclic prefix
+cp_ofdm_symbol(conf.cp_len+1:end) = payload_ofdm_symbol; % add cyclic prefix to symbol
+
+% Mixing
+time_vector = (0:1/conf.f_s:(length(CP_OFDM_symb)-1)/conf.f_s);
+of = real(CP_OFDM_symb).*cos(2*pi*conf.f_c.*time_vector)-imag(CP_OFDM_symb).*sin(2*pi*conf.f_c.*time_vector);
+
+
+
+
+
+txsymbols = [preamble_mapped.', payload_symbols]; % insert preamble sequence
+
+txsymbols_up = upsample(txsymbols, conf.os_factor); % add zeros between symbols
+
+
+tx_filterlen = 20;
+filtered_tx_signal = conv(txsymbols_up, pulse, 'valid');
+
+% dummy 400Hz sinus generation
+%time_vector = 1:1/conf.f_s:4;
+%txsignal = 0.3*sin(2*pi*400 * time_vector.');
+
+txsignal = up_conversion(filtered_tx_signal, conf.f_c, conf.f_s);

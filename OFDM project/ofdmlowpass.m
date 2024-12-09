@@ -14,3 +14,4 @@ function [after] = ofdmlowpass(before,conf,f)
 %
 after = lowpass(before,f,conf.f_s,StopbandAttenuation=30);
 
+end

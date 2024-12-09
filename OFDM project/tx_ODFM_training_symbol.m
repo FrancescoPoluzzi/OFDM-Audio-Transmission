@@ -11,7 +11,7 @@ function [txsignal, conf] = tx_OFDM_training_symbol(txbits,conf,k)
 training_symbol =-1 + 2*txbits; % map training bits to BPSK
 training_ofdm_symbol = osifft(training_symbol, conf.os_factor); % inverse descrete fourier tranform
 
-cp_ofdm_symbol = zeros(1, length(training_ofdm_symbols)+conf.cp_len);
+cp_ofdm_symbol = zeros(1, length(training_ofdm_symbol)+conf.cp_len);
 cyclic_prefix = training_ofdm_symbol(end-conf.cp_len+1: end);
 cp_ofdm_symbol(1:conf.cp_len) = cyclic_prefix; % get cyclic prefix
 cp_ofdm_symbol(conf.cp_len+1:end) = training_ofdm_symbol; % add cyclic prefix to symbol

@@ -1,4 +1,4 @@
-function [txsignal conf] = tx_preamble(txbits,conf,k)
+function [txsignal conf] = tx_preamble(conf,k)
 %
 %   [txsignal conf] = tx_preamble(txbits,conf,k) transmits the BPSK-mapped
 %   (single carrier) preamble for frame synchronization and initial channel estimation.
