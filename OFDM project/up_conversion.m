@@ -12,12 +12,12 @@ function sPB = up_conversion(sBB, fc, fs)
 sBB = sBB(:);
 
 % Generate time vector based on sampling frequency
-t = (0:length(sBB)-1)' / fs;
+t = 0: (1/fs) : (size(sBB,1)/fs) - (1/fs);
 
 exp_component = exp(+1j * 2 * pi * fc * t);
 
 % Perform upconversion
-sPB_cmplx = sBB .* exp_component;
+sPB_cmplx = sBB .* exp_component.';
 
 sPB = real(sPB_cmplx);
 

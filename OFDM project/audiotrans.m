@@ -15,12 +15,12 @@ conf.audiosystem ='bypass';% 'matlab'; % Values: 'matlab','native','bypass'
 %conf.audiosystem ='native';
 %conf.audiosystem ='matlab';
 
-symbol_rates =  [ 100 ];
+symbol_rates =  [ 100 200 ];
 BER_values = zeros(length(symbol_rates));
 
 for rate_idx = 1:length(symbol_rates)
     conf.f_s     = 48000;   % sampling frequency
-    conf.f_sym   = symbol_rates(rate_idx);     % symbol rate (only for BPSK preamble)
+    conf.f_sym   = symbol_rates(rate_idx); % symbol rate (only for BPSK preamble)
     conf.nframes = 1;       % number of frames to transmit
     conf.nbits   = 512;    % number of bits 
     conf.modulation_order = 2; % BPSK:1, QPSK:2
@@ -28,16 +28,22 @@ for rate_idx = 1:length(symbol_rates)
     conf.n_carriers = 256;
     conf.bitsXsymb = conf.n_carriers*2; % Because we are using QPSK
     conf.spacing = 5; % spacing between symbols in Hz
-    conf.os_factor = ceil( conf.f_s/(conf.spacing*conf.n_carriers)); % oversampling factor for OFDM symbols
+    conf.os_factor = floor(conf.f_s/(conf.spacing*conf.n_carriers)); % oversampling factor for OFDM symbols
+    if(mod(conf.f_s/(conf.spacing*conf.n_carriers),1)~=0)
+        conf.spacing = conf.f_s/(conf.os_factor*conf.n_carriers);
+    end
     conf.rolloff = 0.22;
     conf.os_factor_preamble  = conf.f_s/conf.f_sym; % oversampling factor for BPSK preamble
     conf.symbol_length = conf.os_factor*conf.n_carriers;
-    conf.cp_len = conf.os_factor*conf.n_carriers/2; % length of cyclic prefix == half of the symbol length
+    conf.cp_len = conf.symbol_length/2; % length of cyclic prefix == half of the symbol length
     conf.tx_filterlen = 20;
     conf.npreamble  = 100;
     conf.bitsps     = 16;   % bits per audio sample
     conf.offset     = 0;
-    
+    conf.training_bits = randi([0,1],conf.n_carriers,1); 
+    conf.training_symbol = 1 - 2 * conf.training_bits; % BPSK-mapped training sequence
+    conf.BW_BB = ceil((conf.n_carriers +1)/2)*conf.spacing; 
+
     % Init Section
     % all calculations that you only have to do once
     
@@ -62,9 +68,8 @@ for rate_idx = 1:length(symbol_rates)
         
         % TODO: Implement tx() Transmit Function
        txpreamble = tx_preamble(conf, k);
-       training_data = lfsr_framesync(conf.n_carriers);
-       txtraining = tx_ODFM_training_symbol(training_data, conf, k);
-       txpayload = tx_ODFM_payload_symbol(txbits, conf, k);
+       txtraining = tx_OFDM_training_symbol(conf, k);
+       txpayload = tx_OFDM_payload_symbol(txbits, conf, k);
 
         txsignal = [txpreamble; txtraining; txpayload];
         
@@ -127,7 +132,8 @@ for rate_idx = 1:length(symbol_rates)
         elseif strcmp(conf.audiosystem,'bypass')
             SNRdB = 50;
             rawrxsignal = rawtxsignal(:,1);
-            rxsignal    = awgn_channel(rawrxsignal, SNRdB);
+           % rxsignal    = awgn_channel(rawrxsignal, SNRdB);
+            rxsignal = rawrxsignal;
         end
         
         %{

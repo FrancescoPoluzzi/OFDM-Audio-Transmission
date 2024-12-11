@@ -17,5 +17,3 @@ cp_ofdm_symbol(conf.cp_len+1:end) = payload_ofdm_symbol; % add cyclic prefix to 
 
 % Mixing
 txsignal = up_conversion(cp_ofdm_symbol, conf.f_c, conf.f_s);
-
-

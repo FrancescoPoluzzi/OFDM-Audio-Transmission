@@ -12,12 +12,12 @@ function sBB = down_conversion(rPB, fc, fs)
 rPB = rPB(:);
 
 % Generate time vector based on sampling frequency
-t = (0:length(rPB)-1)' / fs;
+t =  0:(1/fs) : size(rPB,1)/fs - (1/fs);
 
 % Compute complex exponential for downconversion
 exp_component = exp(-1j * 2 * pi * fc * t);
 
 % Perform downconversion
-sBB = rPB .* exp_component;
+sBB = rPB .* exp_component.';
 
 end

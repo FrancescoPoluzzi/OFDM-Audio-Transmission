@@ -1,4 +1,4 @@
-function [txsignal, conf] = tx_OFDM_training_symbol(txbits,conf,k)
+function [txsignal, conf] = tx_OFDM_training_symbol(conf,k)
 % Digital Transmitter
 %
 %   [txsignal conf] = tx_OFDM_training_symbol(txbits,conf,k) transmit a OFDM
@@ -8,8 +8,7 @@ function [txsignal, conf] = tx_OFDM_training_symbol(txbits,conf,k)
 %   
 %
 
-training_symbol =-1 + 2*txbits; % map training bits to BPSK
-training_ofdm_symbol = osifft(training_symbol, conf.os_factor); % inverse descrete fourier tranform
+training_ofdm_symbol = osifft(conf.training_symbol, conf.os_factor); % inverse descrete fourier tranform
 
 cp_ofdm_symbol = zeros(1, length(training_ofdm_symbol)+conf.cp_len);
 cyclic_prefix = training_ofdm_symbol(end-conf.cp_len+1: end);

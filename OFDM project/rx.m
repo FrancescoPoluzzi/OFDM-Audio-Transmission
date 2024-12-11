@@ -15,15 +15,18 @@ function [rxbits ,conf] = rx(rxsignal,conf,k)
     %
 
     rxsymbols = down_conversion(rxsignal, conf.f_c, conf.f_s);
-    rxsymbols = ofdmlowpass(rxsymbols,conf,conf.n_carriers*conf.spacing);
+    f_cutoff = conf.BW_BB + 0.05 * conf.BW_BB;      % Define the filter cutoff as 5% above the baseband BW
+    rxsymbols = ofdmlowpass(rxsymbols,conf,f_cutoff);
 
     frame_detection_threshold = 150;
 
     found = 0;
     while(found == 0)
-        [start_idx, ~ , ~, found] = frame_sync(rxsymbols, conf.os_factor, frame_detection_threshold, conf.npreamble);
+        [start_idx, found] = frame_sync(rxsymbols, conf, frame_detection_threshold);
         frame_detection_threshold = frame_detection_threshold - 10;
     end
+    frame_detection_threshold
+    start_idx
     
     training_symbol = rxsymbols(start_idx: start_idx+conf.symbol_length+conf.cp_len-1 );
 
@@ -35,23 +38,13 @@ function [rxbits ,conf] = rx(rxsignal,conf,k)
     payload_no_cp = osfft(payload_no_cp, conf.os_factor);
     training_symbol_no_cp = osfft(training_symbol_no_cp, conf.os_factor);
 
-    phase_offsets = angle(payload_no_cp ./ training_symbol_no_cp); 
-    phase_corrected_rx_symbols = payload_no_cp .* exp(-1i *phase_offsets);
+   % phase_offsets = angle(payload_no_cp ./ training_symbol_no_cp); 
+   % phase_corrected_rx_symbols = payload_no_cp .* exp(-1i *phase_offsets);
 
-   % H_est = rx_symbols ./ training_symbol; // ASK QUESTION
+    payload_eq = channel_equalization(payload_no_cp, training_symbol_no_cp, conf.training_symbol);
 
-    % Demapping QPSK
-    constellation = 1/sqrt(2) * [(-1-1j) (-1+1j) ( 1-1j) ( 1+1j)];
-    [~,ind] = min(abs(ones(conf.bitsXsymb/2,4)*diag(constellation) - diag(phase_corrected_rx_symbols)*ones(conf.bitsXsymb/2,4)),[],2);
-    rxbits = de2bi(ind-1, 'left-msb',2);
-    rxbits = rxbits(:);
+    constellation = [(1+1j)/sqrt(2), (-1+1j)/sqrt(2), ...
+                     (1-1j)/sqrt(2), (-1-1j)/sqrt(2)];
+    bit_pairs = [0 0; 0 1; 1 0 ; 1 1];
     
-   % rxbits = reshape(demapper_general(phase_corrected_rx_symbols, constellation, bit_pairs).', [], 1);
-
-    %payload = downsample(filtered_rx_symbols(start_idx:start_idx+conf.nsyms*conf.os_factor-1), conf.os_factor);
-    %rxbits = reshape(demapper_general(payload, constellation, bit_pairs).', [], 1);
-    
-    %rxbits = reshape(demapper_general(timing_corrected_rx_symbols, constellation, bit_pairs).', [], 1);
-
-    % dummy 
-    %rxbits = zeros(conf.nbits,1);
+    rxbits = reshape(demapper_general(training_symbol_no_cp, constellation, bit_pairs).', [], 1);
