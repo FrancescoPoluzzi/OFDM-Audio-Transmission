@@ -76,15 +76,15 @@ for rate_idx = 1:length(symbol_rates)
         % there is IFFT and CP insertion done inside these functions
         
         % Normalization
-        % preamble  
+        % preamble normalize 
         avgEpreamble = sum(abs(txpreamble).^2)/length(txpreamble);        
-        txpreamble = (1/sqrt(avgEpreamble))*txpreamble;
-        % trainig data
-        avgEtrain = sum(abs(txtraining).^2)/length(txtraining);        
-        txtraining = (1/sqrt(avgEtrain))*txtraining;
-        % payload data
-        avgEpayload = sum(abs(txpayload).^2)/length(txpayload);        
-        txpayload = (1/sqrt(avgEpayload))*txpayload;
+        txpreamble_norm = (1/sqrt(average_energy_const))*constellation;
+        %
+        avgE = sum(abs(constellation).^2)/length(constellation);        
+        constellation_norm = (1/sqrt(average_energy_const))*constellation;
+        %
+        avgE = sum(abs(constellation).^2)/length(constellation);        
+        constellation_norm = (1/sqrt(average_energy_const))*constellation;
         % Forming the signal
         txsignal = [txpreamble; txtraining; txpayload];
 
@@ -151,15 +151,18 @@ for rate_idx = 1:length(symbol_rates)
             rxsignal = rawrxsignal;
         end
         
+        %{
         % Plot received signal for debugging
         figure;
         plot(rxsignal);
         title('Received Signal')
-      
+    
         figure;
         plot(txsignal);
         title('Sent Signal')
-
+        %}
+        
+        %
         % End
         % Audio Transmission   
         % % % % % % % % % % % %
