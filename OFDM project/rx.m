@@ -37,14 +37,16 @@ function [rxbits ,conf] = rx(rxsignal,conf,k)
 
     payload = rxsymbols(start_idx+conf.symbol_length+conf.cp_len+1 : end);
     payload_no_cp  = remove_cyclic_prefix(payload, 1, conf);
-
+    payload_no_cp = serial_to_parallel(payload_no_cp, conf.symbol_length); % Convert to parallel
+    training_symbol_no_cp = serial_to_parallel(training_symbol_no_cp, conf.symbol_length);
     payload_no_cp = osfft(payload_no_cp, conf.os_factor);
     training_symbol_no_cp = osfft(training_symbol_no_cp, conf.os_factor);
-
+    
    % phase_offsets = angle(payload_no_cp ./ training_symbol_no_cp); 
    % phase_corrected_rx_symbols = payload_no_cp .* exp(-1i *phase_offsets);
 
     payload_eq = channel_equalization(payload_no_cp, training_symbol_no_cp, conf.training_symbol);
+    payload_eq = parallel_to_serial(payload_eq);
 
     constellation = [(1+1j)/sqrt(2), (-1+1j)/sqrt(2), ...
                      (1-1j)/sqrt(2), (-1-1j)/sqrt(2)];
