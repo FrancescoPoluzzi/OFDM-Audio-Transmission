@@ -20,20 +20,23 @@ function [rxbits ,conf] = rx(rxsignal,conf,k)
 
     frame_detection_threshold = 150;
 
-    found = 0;
-    while(found == 0)
-        [start_idx, found] = frame_sync(rxsymbols, conf, frame_detection_threshold);
-        frame_detection_threshold = frame_detection_threshold - 10;
-    end
-    frame_detection_threshold
+  %  found = 0;
+ %   while(found == 0)
+        %[start_idx, found] = frame_sync(rxsymbols, conf, frame_detection_threshold);
+    %    frame_detection_threshold = frame_detection_threshold - 10;
+  %  end
+  %  frame_detection_threshold
+
+    start_idx = frame_sync_bea(rxsymbols, conf);
+
     start_idx
     
     training_symbol = rxsymbols(start_idx: start_idx+conf.symbol_length+conf.cp_len-1 );
 
     training_symbol_no_cp = training_symbol(conf.cp_len+1 : end);
 
-    payload = rxsymbols(start_idx+conf.symbol_length+conf.cp_len : end);
-    payload_no_cp  = remove_cyclic_prefix(payload, conf.symbol_length, conf.cp_len, 1);
+    payload = rxsymbols(start_idx+conf.symbol_length+conf.cp_len+1 : end);
+    payload_no_cp  = remove_cyclic_prefix(payload, 1, conf);
 
     payload_no_cp = osfft(payload_no_cp, conf.os_factor);
     training_symbol_no_cp = osfft(training_symbol_no_cp, conf.os_factor);
@@ -47,4 +50,10 @@ function [rxbits ,conf] = rx(rxsignal,conf,k)
                      (1-1j)/sqrt(2), (-1-1j)/sqrt(2)];
     bit_pairs = [0 0; 0 1; 1 0 ; 1 1];
     
-    rxbits = reshape(demapper_general(training_symbol_no_cp, constellation, bit_pairs).', [], 1);
+    avg_E = sum(abs(payload_eq).^2)/length(payload_eq);
+    normalized_payload =  (1/sqrt(avg_E))*payload_eq;
+    
+   % rxbits = reshape(demapper_general(normalized_payload, constellation, bit_pairs).', [], 1);
+    rxbits = demapper(normalized_payload);
+
+    rxbits = rxbits(1:conf.nbits);

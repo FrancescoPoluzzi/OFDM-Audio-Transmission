@@ -7,7 +7,7 @@ function [txsignal, conf] = tx_OFDM_payload_symbol(txbits,conf,k)
 %   
 %
 
-payload_symbol = qpsk_modulator(txbits(k: k+conf.nbits-1)); % map payload bits
+payload_symbol = QPSK_GrayMap(txbits(k: k+conf.nbits-1)); % map payload bits
 payload_ofdm_symbol = osifft(payload_symbol, conf.os_factor); % inverse descrete fourier tranform
 
 cp_ofdm_symbol = zeros(1, length(payload_ofdm_symbol)+conf.cp_len);
@@ -16,4 +16,5 @@ cp_ofdm_symbol(1:conf.cp_len) = cyclic_prefix; % get cyclic prefix
 cp_ofdm_symbol(conf.cp_len+1:end) = payload_ofdm_symbol; % add cyclic prefix to symbol
 
 % Mixing
-txsignal = up_conversion(cp_ofdm_symbol, conf.f_c, conf.f_s);
+%Stxsignal = up_conversion(cp_ofdm_symbol, conf.f_c, conf.f_s);
+txsignal = cp_ofdm_symbol.';

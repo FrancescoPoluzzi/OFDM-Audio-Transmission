@@ -2,7 +2,7 @@ function [beginning_of_data, found] = frame_sync(rx_signal, conf, detection_thre
 
 L = conf.os_factor_preamble;
 
-pulse = rrc(L, conf.rolloff, conf.tx_filterlen);
+pulse = rrc(L, conf.rolloff, conf.tx_filterlen*conf.os_factor_preamble);
 rx_signal = conv(rx_signal, pulse, 'same');
 
 frame_sync_length = conf.npreamble;

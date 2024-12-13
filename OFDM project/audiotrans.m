@@ -15,25 +15,26 @@ conf.audiosystem ='bypass';% 'matlab'; % Values: 'matlab','native','bypass'
 %conf.audiosystem ='native';
 %conf.audiosystem ='matlab';
 
-symbol_rates =  [ 100 200 ];
+symbol_rates =  [ 100 ];
 BER_values = zeros(length(symbol_rates));
 
 for rate_idx = 1:length(symbol_rates)
     conf.f_s     = 48000;   % sampling frequency
-    conf.f_sym   = symbol_rates(rate_idx); % symbol rate (only for BPSK preamble)
+    conf.f_sym   = 100; % symbol rate (only for BPSK preamble)
     conf.nframes = 1;       % number of frames to transmit
-    conf.nbits   = 512;    % number of bits 
+    conf.nbits   = 2000;    % number of bits 
     conf.modulation_order = 2; % BPSK:1, QPSK:2
-    conf.f_c     = 4000; % carrier frequency
-    conf.n_carriers = 256;
+    conf.f_c     = 8000; % carrier frequency
+    conf.n_carriers = 1024;
     conf.bitsXsymb = conf.n_carriers*2; % Because we are using QPSK
     conf.spacing = 5; % spacing between symbols in Hz
-    conf.os_factor = floor(conf.f_s/(conf.spacing*conf.n_carriers)); % oversampling factor for OFDM symbols
-    if(mod(conf.f_s/(conf.spacing*conf.n_carriers),1)~=0)
-        conf.spacing = conf.f_s/(conf.os_factor*conf.n_carriers);
-    end
+    %conf.os_factor = floor(conf.f_s/(conf.spacing*conf.n_carriers)); % oversampling factor for OFDM symbols
+  %  if(mod(conf.f_s/(conf.spacing*conf.n_carriers),1)~=0)
+%        conf.spacing = conf.f_s/(conf.os_factor*conf.n_carriers);
+ %   end
+    conf.os_factor = ceil(conf.f_s / (conf.spacing * conf.n_carriers));   % OS factor of our system. It will feed OSIFFT and OSFFT.
     conf.rolloff = 0.22;
-    conf.os_factor_preamble  = conf.f_s/conf.f_sym; % oversampling factor for BPSK preamble
+    conf.os_factor_preamble  =96;% conf.f_s/conf.f_sym; % oversampling factor for BPSK preamble
     conf.symbol_length = conf.os_factor*conf.n_carriers;
     conf.cp_len = conf.symbol_length/2; % length of cyclic prefix == half of the symbol length
     conf.tx_filterlen = 20;
@@ -43,6 +44,7 @@ for rate_idx = 1:length(symbol_rates)
     conf.training_bits = randi([0,1],conf.n_carriers,1); 
     conf.training_symbol = 1 - 2 * conf.training_bits; % BPSK-mapped training sequence
     conf.BW_BB = ceil((conf.n_carriers +1)/2)*conf.spacing; 
+    conf.n_payload_symbols = 1;
 
     % Init Section
     % all calculations that you only have to do once
@@ -87,6 +89,8 @@ for rate_idx = 1:length(symbol_rates)
         txpayload = (1/sqrt(avgEpayload))*txpayload;
         % Forming the signal
         txsignal = [txpreamble; txtraining; txpayload];
+
+        txsignal = up_conversion(txsignal, conf.f_c, conf.f_s);
 
         % % % % % % % % % % % %
         % Begin
@@ -171,6 +175,7 @@ for rate_idx = 1:length(symbol_rates)
         res.biterrors(k)    = sum(rxbits ~= txbits);
         
     end
+
     per = sum(res.biterrors > 0)/conf.nframes
     ber = sum(res.biterrors)/sum(res.rxnbits)
     BER_values(rate_idx) = ber;
