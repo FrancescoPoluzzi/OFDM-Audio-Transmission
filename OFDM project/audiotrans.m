@@ -22,16 +22,12 @@ for rate_idx = 1:length(symbol_rates)
     conf.f_s     = 48000;   % sampling frequency
     conf.f_sym   = 100; % symbol rate (only for BPSK preamble)
     conf.nframes = 1;       % number of frames to transmit
-    conf.nbits   = 2000;    % number of bits 
+    conf.nbits   = 2048;    % number of bits 
     conf.modulation_order = 2; % BPSK:1, QPSK:2
     conf.f_c     = 8000; % carrier frequency
     conf.n_carriers = 1024;
     conf.bitsXsymb = conf.n_carriers*2; % Because we are using QPSK
     conf.spacing = 5; % spacing between symbols in Hz
-    %conf.os_factor = floor(conf.f_s/(conf.spacing*conf.n_carriers)); % oversampling factor for OFDM symbols
-  %  if(mod(conf.f_s/(conf.spacing*conf.n_carriers),1)~=0)
-%        conf.spacing = conf.f_s/(conf.os_factor*conf.n_carriers);
- %   end
     conf.os_factor = ceil(conf.f_s / (conf.spacing * conf.n_carriers));   % OS factor of our system. It will feed OSIFFT and OSFFT.
     conf.rolloff = 0.22;
     conf.os_factor_preamble  =96;% conf.f_s/conf.f_sym; % oversampling factor for BPSK preamble
@@ -70,25 +66,14 @@ for rate_idx = 1:length(symbol_rates)
         
         % TODO: Implement tx() Transmit Function
         % Generate Preamble
-        txpreamble = tx_preamble(conf, k);
-        % Generate Training Data 
-        txtraining = tx_OFDM_training_symbol(conf, k);
-        % Generate Payload Data
-        txpayload = tx_OFDM_payload_symbol(txbits, conf, k);
+        txsignal = tx(txbits, conf, k);
         % there is IFFT and CP insertion done inside these functions
         
         % Normalization
         % preamble  
-        avgEpreamble = sum(abs(txpreamble).^2)/length(txpreamble);        
-        txpreamble = (1/sqrt(avgEpreamble))*txpreamble;
-        % trainig data
-        avgEtrain = sum(abs(txtraining).^2)/length(txtraining);        
-        txtraining = (1/sqrt(avgEtrain))*txtraining;
-        % payload data
-        avgEpayload = sum(abs(txpayload).^2)/length(txpayload);        
-        txpayload = (1/sqrt(avgEpayload))*txpayload;
-        % Forming the signal
-        txsignal = [txpreamble; txtraining; txpayload];
+        avgEpreamble = sum(abs(txsignal).^2)/length(txsignal);        
+        txsignal = (1/sqrt(avgEpreamble))*txsignal;
+
 
         txsignal = up_conversion(txsignal, conf.f_c, conf.f_s);
 
@@ -155,6 +140,14 @@ for rate_idx = 1:length(symbol_rates)
             rxsignal = rawrxsignal;
         end
         
+
+        % End
+        % Audio Transmission   
+        % % % % % % % % % % % %
+        
+        % TODO: Implement rx() Receive Function
+        [rxbits, conf]       = rx(rxsignal,conf, k);
+
         % Plot received signal for debugging
         figure;
         plot(rxsignal);
@@ -163,13 +156,6 @@ for rate_idx = 1:length(symbol_rates)
         figure;
         plot(txsignal);
         title('Sent Signal')
-
-        % End
-        % Audio Transmission   
-        % % % % % % % % % % % %
-        
-        % TODO: Implement rx() Receive Function
-        [rxbits, conf]       = rx(rxsignal,conf, k);
         
         res.rxnbits(k)      = length(rxbits);  
         res.biterrors(k)    = sum(rxbits ~= txbits);

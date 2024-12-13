@@ -1,46 +1,50 @@
-function [beginning_of_data, found] = frame_sync(rx_signal, conf, detection_threshold)
-
-L = conf.os_factor_preamble;
-
-pulse = rrc(L, conf.rolloff, conf.tx_filterlen*conf.os_factor_preamble);
-rx_signal = conv(rx_signal, pulse, 'same');
-
-frame_sync_length = conf.npreamble;
-
-% Calculate the frame synchronization sequence and map it to BPSK: 0 -> +1, 1 -> -1
-frame_sync_sequence = 1 - 2*lfsr_framesync(frame_sync_length);
-
-% When processing an oversampled signal (L>1), the following is important:
-% Do not simply return the index where T exceeds the threshold for the first time. Since the signal is oversampled, so will be the
-% peak in the correlator output. So once we have detected a peak, we keep on processing the next L samples and return the index
-% where the test statistic takes on the maximum value.
-% The following two variables exist for exactly this purpose.
-current_peak_value = 0;
-samples_after_threshold = L;
-
-for i = L * frame_sync_length + 1 : length(rx_signal)
-    r = rx_signal(i - L * frame_sync_length : L : i - L); % The part of the received signal that is currently inside the correlator.
-    c = frame_sync_sequence' * r;
-    T = abs(c)^2 / abs(r' * r);
+function beginning_of_data = frame_sync(rx_signal, conf)
     
-    if (T > detection_threshold || samples_after_threshold < L)
-        samples_after_threshold = samples_after_threshold - 1;
-        if (T > current_peak_value)
-            beginning_of_data = i;
-            % TODO
-            % for phase detection, we need to have an initial phase for the
-            % first symbol. We use the phase of the peak of the correlator
-            % output of the preamble to find this phase
-            current_peak_value = T;
-        end
-        if (samples_after_threshold == 0)
-            found = 1;
-            return;
-        end
-    end
+   L = conf.os_factor_preamble;
+   detection_threshold = 15;
+   pulse = rrc(conf.os_factor_preamble, conf.rolloff, conf.tx_filterlen * conf.os_factor_preamble);
+%   phase_of_peak = 0;
+%   magnitude_of_peak = -1;
+%    rx_signal_mf_filterd = conv(pulse, rx_signal,'full');
+%    rx_signal_mf_filterd = rx_signal_mf_filterd(1+2*conf.tx_filterlen : end - conf.tx_filterlen);
+   
+   % Filter it
+   rx_signal_mf_filtered = conv(rx_signal, pulse, 'same');
+   preamble_bpsk = 1 - 2*lfsr_framesync(conf.npreamble);
+ 
+   current_peak_value = 0;
+   samples_after_threshold = L;
+   vecT = zeros(1,length(L * conf.npreamble + 1 : length(rx_signal_mf_filtered)));
+   vecC = zeros(1,length(L * conf.npreamble + 1 : length(rx_signal_mf_filtered)));
+   for i = L * conf.npreamble + 1 : length(rx_signal_mf_filtered)
+       r = rx_signal_mf_filtered(i - L * conf.npreamble : L : i - L);
+       %r = conv(r, pulse,'full');
+       c = preamble_bpsk' * r; %r(1 + conf.tx_filterlen : end - conf.tx_filterlen);
+       T = abs(c)^2 / abs(r' * r);
+       vecT(i) = T;
+       vecC(i) = c;
+       if (T > detection_threshold || samples_after_threshold < L)
+           samples_after_threshold = samples_after_threshold - 1;
+           if (T > current_peak_value)
+               beginning_of_data = i;
+%               phase_of_peak = mod(angle(c),2*pi);
+%               magnitude_of_peak = norm(c)/conf.npreamble;
+               current_peak_value = T;
+           end
+           if (samples_after_threshold == 0)
+               figure
+               plot(abs(vecT))
+%                hold on
+%                plot(abs(vecC))
+        	   return;
+           end
+       end
+   end
+   figure
+   plot(abs(vecT))
+%    hold on
+%    plot(abs(vecC))
+   if samples_after_threshold == L 
+       fprintf("Error\n");
+   end
 end
-found = 0;
-beginning_of_data = 0;
-
-warning('No synchronization sequence found.');
-return
