@@ -20,8 +20,6 @@ function [rxbits ,conf] = rx(rxsignal,conf, k)
 
     start_idx = frame_sync(rxsymbols_filtered, conf);
 
-    start_idx
-
     rxsignal_no_cp  = remove_cyclic_prefix(rxsymbols_filtered, start_idx, conf);
     rxsignal_no_cp_parallel = serial_to_parallel_rx(rxsignal_no_cp, conf); % Convert to parallel
 
@@ -47,4 +45,4 @@ function [rxbits ,conf] = rx(rxsignal,conf, k)
    % rxbits = reshape(demapper_general(normalized_payload, constellation, bit_pairs).', [], 1);
     rxbits_demapped = demapper(normalized_payload);
 
-    rxbits = rxbits_demapped(1:conf.nbits);
+    rxbits = rxbits_demapped(1:conf.bitsperframe);

@@ -27,23 +27,13 @@ function beginning_of_data = frame_sync(rx_signal, conf)
            samples_after_threshold = samples_after_threshold - 1;
            if (T > current_peak_value)
                beginning_of_data = i;
-%               phase_of_peak = mod(angle(c),2*pi);
-%               magnitude_of_peak = norm(c)/conf.npreamble;
                current_peak_value = T;
            end
            if (samples_after_threshold == 0)
-               figure
-               plot(abs(vecT))
-%                hold on
-%                plot(abs(vecC))
         	   return;
            end
        end
    end
-   figure
-   plot(abs(vecT))
-%    hold on
-%    plot(abs(vecC))
    if samples_after_threshold == L 
        fprintf("Error\n");
    end
