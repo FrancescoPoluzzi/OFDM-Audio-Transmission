@@ -19,6 +19,8 @@ conf.audiosystem    = 'awgn'; % simulated awgn channel
 conf.what_to_send   = 'random'; % send random bits
 %conf.what_to_send  = 'image';  % send an image
 
+conf.show_plots = true; % set to true to show all the plots
+
 if strcmp(conf.what_to_send,'image')
     src_img = imread('image.jpg'); % read the image\
     if size(src_img, 3) == 3
@@ -35,11 +37,9 @@ if strcmp(conf.what_to_send,'image')
 elseif strcmp(conf.what_to_send,'random')
     conf.nbits = 10000;
     tx_bit_stream = randi([0 1],conf.nbits,1);
-   
 end
 
 conf.tracking_method = 'Block';              % Options: 'Block', 'Block_Viterbi', 'Comb'
-conf.training_type = 'Block';     % Options 'Block, Comb'
 
 conf.f_s                = 48000;        % sampling frequency
 conf.f_sym              = 100;          % symbol rate (only for BPSK preamble)
@@ -48,15 +48,15 @@ conf.f_c                = 8000;         % carrier frequency
 conf.n_carriers         = 1024;
 conf.n_payload_symbols  = 4 ;           % Number of multi-carrier QPSK symbols per frame
 
-if strcmp(conf.training_type,'Block')
-    conf.block_interval = 2 ; % how many payload symbols each training symbol
+if strcmp(conf.tracking_method,'Block')
+    conf.block_interval = 4 ; % how many payload symbols each training symbol
     conf.n_training_symbols = ceil(conf.n_payload_symbols/conf.block_interval);
     conf.bitsperframe = conf.n_carriers*conf.n_payload_symbols*2; 
 
-elseif strcmp(conf.training_type,'Comb')
+elseif strcmp(conf.tracking_method,'Comb')
     conf.comb_training_interval = 4; % each how many subcarriers to insert a training symbol
     conf.n_training_symbols = 1; % we'll still send the training symbol at the beginning of the frame 
-    conf.n_trainings_per_symbol = n_carriers/conf.comb_training_interval;
+    conf.n_trainings_per_symbol = conf.n_carriers/conf.comb_training_interval;
     conf.bitsperframe = (conf.n_carriers-conf.n_trainings_per_symbol)*conf.n_payload_symbols*2; 
 end
 
@@ -181,15 +181,17 @@ for k=1:conf.nframes
 
     rx_bit_stream((k-1)*conf.bitsperframe +1 : k*conf.bitsperframe) = rxbits;
 
-    if strcmp(conf.what_to_send,'random')
-        % Plot received signal for debugging
-        figure;
-        plot(rxsignal);
-        title('Received Signal')
-      
-        figure;
-        plot(txsignal);
-        title('Sent Signal')
+    if(conf.show_plots == true)
+        if strcmp(conf.what_to_send,'random')
+            % Plot received signal for debugging
+            figure;
+            plot(rxsignal);
+            title('Received Signal')
+          
+            figure;
+            plot(txsignal);
+            title('Sent Signal')
+        end
     end
 
     
@@ -224,4 +226,6 @@ end
 per = sum(res.biterrors > 0)/conf.nframes
 ber = sum(res.biterrors)/sum(res.rxnbits)
 
-plots(conf,h)
+if(conf.show_plots == true)
+    plots(conf,h)
+end

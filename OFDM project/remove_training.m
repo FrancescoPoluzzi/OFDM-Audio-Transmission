@@ -1,5 +1,5 @@
 function payloadsymbols = remove_training(rx_with_training, conf)
-if strcmp(conf.training_type, 'Block')
+if strcmp(conf.tracking_method, 'Block')
     % Preallocate space for payload
     payloadsymbols = zeros(conf.n_payload_symbols * conf.n_carriers, 1);
     

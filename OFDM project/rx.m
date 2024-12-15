@@ -59,15 +59,27 @@ function [rxbits ,conf, h] = rx(rxsignal,conf, k)
             payload_eq(:, (i-1)*conf.block_interval + 1 : i*conf.block_interval) = eq_payload_block;
         end
 
+    case  'Comb'
+         % also in the Comb case, a pilot symbol is sent at the beginning
+         % of the frame
+         training_rx = rxsymbols_no_cp(:,1);
+         payload_rx = rxsymbols_no_cp(:,2:end);
+          [h, payload_eq_pilot] = channel_equalization(payload_rx, training_rx, conf.training_symbol);
+         payload_eq = channel_equalization_comb (payload_eq_pilot, conf);
+
     otherwise
         error('Unknown tracking method specified in conf.tracking_method.');
     end
 
     %[ h, payload_eq ] = channel_equalization(rx_payload, rx_training, conf.training_symbol);
-    payload_eq = parallel_to_serial(payload_eq);
+    payload_eq_serial = parallel_to_serial(payload_eq);
 
-    avg_E = sum(abs(payload_eq).^2)/length(payload_eq);
-    normalized_payload =  (1/sqrt(avg_E))*payload_eq;
+    if strcmp(conf.tracking_method,'Comb')
+        payload_eq_serial = remove_training_comb(payload_eq_serial, conf);
+    end
+
+    avg_E = sum(abs(payload_eq_serial).^2)/length(payload_eq_serial);
+    normalized_payload =  (1/sqrt(avg_E))*payload_eq_serial;
     
     rxbits_demapped = demapper(normalized_payload);
 
