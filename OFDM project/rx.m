@@ -1,4 +1,4 @@
-function [rxbits ,conf] = rx(rxsignal,conf, k)
+function [rxbits ,conf, h] = rx(rxsignal,conf, k)
     % Digital Receiver
     %
     %   [txsignal conf] = tx(txbits,conf,k) implements a complete causal
@@ -32,17 +32,12 @@ function [rxbits ,conf] = rx(rxsignal,conf, k)
 
     rx_payload = rxsymbols_no_cp(:,2:end);
 
-    payload_eq = channel_equalization(rx_payload, rx_training, conf.training_symbol);
+    [ h, payload_eq ] = channel_equalization(rx_payload, rx_training, conf.training_symbol);
     payload_eq = parallel_to_serial(payload_eq);
 
-    %constellation = [(1+1j)/sqrt(2), (-1+1j)/sqrt(2), ...
-    %                 (1-1j)/sqrt(2), (-1-1j)/sqrt(2)];
-    %bit_pairs = [0 0; 0 1; 1 0 ; 1 1];
-    
     avg_E = sum(abs(payload_eq).^2)/length(payload_eq);
     normalized_payload =  (1/sqrt(avg_E))*payload_eq;
     
-   % rxbits = reshape(demapper_general(normalized_payload, constellation, bit_pairs).', [], 1);
     rxbits_demapped = demapper(normalized_payload);
 
     rxbits = rxbits_demapped(1:conf.bitsperframe);

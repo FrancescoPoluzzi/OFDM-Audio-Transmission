@@ -1,4 +1,4 @@
-function eq_symbols = channel_equalization(rx_payload, rx_training, training_symbol)
+function [H_est,eq_symbols] = channel_equalization(rx_payload, rx_training, training_symbol)
     % Estimate the channel frequency response
     H_est = rx_training ./ training_symbol;
     

@@ -1,11 +1,11 @@
-function [] = plots(payload, training_symbols, N, h, num_frames)
+function [] = plots(conf, h)
     % N - OFDM symbol length
 
     % channel spectrum evaluation in time domain
     % channel response evolves over time for a 
     % specific subcarrier or set of subcarriers
-    figure
-    subplot(2,1,1);
+    N = conf.symbol_length;
+    figure;
     plot(abs(h)); % channel spectrum
     xlabel('Subcarrier Index');
     ylabel('Magnitude');
@@ -14,9 +14,8 @@ function [] = plots(payload, training_symbols, N, h, num_frames)
     % channel spectrum evaluation in frequency domain
     % the channel response varies across subcarriers
     Ts = 1/conf.spacing;  % Time to send a sample of an OFDM symbol; 
-    time = 0 : Ts : (conf.OFDM_symbs_per_frame + conf.nb_training_symbs - 1) * Ts;
-    figure
-    for i = 1 : 32 : conf.nb_subcarriers % define the nb subcarriers!!
+    time = 0 : Ts : (conf.n_payload_symbols + 1 - 1) * Ts;
+    for i = 1 : 32 : conf.n_carriers % define the nb subcarriers!!
         plot(time, 20*log10(abs(h(i, :))./ max(abs(h(i, :))) ));
         hold on;
         f = conf.spacing * i;
@@ -25,11 +24,20 @@ function [] = plots(payload, training_symbols, N, h, num_frames)
     ylabel('Magnitude, dB')
     title('Channel Magnitude over Time');
     grid on;
-    subplot(2,1,2);
-    for i = 1 : 32 : conf.nb_subcarriers
+    for i = 1 : 32 : conf.n_carriers
         plot(time, unwrap(angle(h(i, :))));
         hold on;
         f = conf.spacing * i;
+    end
+    for i = 1 : 32 : conf.n_carriers
+    % Check if there's variation in the phase
+    if any(abs(h(i, :)) > 1e-10)  % Check for significant magnitude
+        phase = unwrap(angle(h(i, :)));
+        plot(time, phase);
+        hold on;
+    else
+        disp(['Subcarrier ', num2str(i), ' has no significant channel response.']);
+    end
     end
     xlabel('Time, s');
     ylabel('Phase, rad')
@@ -42,7 +50,7 @@ function [] = plots(payload, training_symbols, N, h, num_frames)
     % over time
   
     figure;
-    CIR = ifft(h,N);
+    CIR = ifft(h,N,2);
     plot(abs(CIR));
     xlabel('Sample Index (Time)');
     ylabel('Magnitude');
@@ -62,8 +70,6 @@ function [] = plots(payload, training_symbols, N, h, num_frames)
     title('Channel Evolution Over Time');
     colorbar;
     grid on;
-
-   
 
 
 end

@@ -20,7 +20,7 @@ for i =  1 : conf.n_payload_symbols+1
     ofdm_symbol_parallel(:,i) = osifft(tx_symbols_parallel(:,i), conf.os_factor);
 end
 
-% For every OFDM symbol take the last N_samples_CP samples and add them to
+% For every OFDM symbol take the last n CP samples and add them to
 % the CP colummn.
 cp_ofdm_symbol_parallel = zeros(conf.cp_len + conf.symbol_length, conf.n_payload_symbols+1);
 for i = 1: (conf.n_payload_symbols+1)

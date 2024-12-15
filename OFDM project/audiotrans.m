@@ -11,13 +11,13 @@
 %   - 'bypass' : no audio transmission, takes txsignal as received signal
 
 % Configuration Values
-%conf.audiosystem ='bypass'; % no channel at all
-conf.audiosystem = 'awgn'; % simulated awgn channel
-%conf.audiosystem ='native'; 
-%conf.audiosystem ='matlab';
+%conf.audiosystem   ='bypass'; % no channel at all
+conf.audiosystem    = 'awgn'; % simulated awgn channel
+%conf.audiosystem   ='native'; 
+%conf.audiosystem   ='matlab';
 
-conf.what_to_send = 'random'; % send random bits
-%conf.what_to_send = 'image';  % send an image
+conf.what_to_send   = 'random'; % send random bits
+%conf.what_to_send  = 'image';  % send an image
 
 if strcmp(conf.what_to_send,'image')
     src_img = imread('image.jpg'); % read the image\
@@ -25,12 +25,12 @@ if strcmp(conf.what_to_send,'image')
         % The image has three channels, so it's in color (RGB). Convert to grayscale.
         src_img = rgb2gray(src_img);
     end
-    [rows, cols] = size(src_img);
-    pixel_values = src_img(:);
-    bits_matrix = de2bi(pixel_values, 8, 'left-msb');
-    tx_bit_stream = bits_matrix(:);
-    tx_bit_stream = logical(tx_bit_stream);
-    conf.nbits   = length(tx_bit_stream);    % number of bits 
+    [rows, cols]    = size(src_img);
+    pixel_values    = src_img(:);
+    bits_matrix     = de2bi(pixel_values, 8, 'left-msb');
+    tx_bit_stream   = bits_matrix(:);
+    tx_bit_stream   = logical(tx_bit_stream);
+    conf.nbits      = length(tx_bit_stream);    % number of bits 
 
 elseif strcmp(conf.what_to_send,'random')
     conf.nbits = 10000;
@@ -39,35 +39,36 @@ elseif strcmp(conf.what_to_send,'random')
 end
 
 
-conf.f_s     = 48000;   % sampling frequency
-conf.f_sym   = 100; % symbol rate (only for BPSK preamble)
-
-conf.modulation_order = 2; % BPSK:1, QPSK:2
-conf.f_c     = 8000; % carrier frequency
-conf.n_carriers = 1024;
-conf.n_payload_symbols = 4 ; % Number of multi-carrier QPSK symbols per frame
+conf.f_s                = 48000;        % sampling frequency
+conf.f_sym              = 100;          % symbol rate (only for BPSK preamble)
+conf.modulation_order   = 2;            % BPSK:1, QPSK:2
+conf.f_c                = 8000;         % carrier frequency
+conf.n_carriers         = 1024;
+conf.n_payload_symbols  = 4 ;           % Number of multi-carrier QPSK symbols per frame
 conf.bitsperframe = conf.n_carriers*conf.n_payload_symbols*2; 
 conf.nframes = ceil(conf.nbits/conf.bitsperframe);       % number of frames to transmit
 conf.last_frame_padding =  conf.nframes * conf.bitsperframe - conf.nbits;
+
 if conf.last_frame_padding > 0
     tx_bit_stream = [tx_bit_stream; zeros(conf.last_frame_padding, 1)];
 end
+
 rx_bit_stream = zeros(size(tx_bit_stream));
 
-conf.bitsXsymb = conf.n_carriers*2; % Because we are using QPSK
-conf.spacing = 5; % spacing between symbols in Hz
-conf.os_factor = ceil(conf.f_s / (conf.spacing * conf.n_carriers));   % OS factor of our system. It will feed OSIFFT and OSFFT.
-conf.rolloff = 0.22;
-conf.os_factor_preamble  =96;% conf.f_s/conf.f_sym; % oversampling factor for BPSK preamble
-conf.symbol_length = conf.os_factor*conf.n_carriers;
-conf.cp_len = conf.symbol_length/2; % length of cyclic prefix == half of the symbol length
-conf.tx_filterlen = 20;
-conf.npreamble  = 100;
-conf.bitsps     = 16;   % bits per audio sample
-conf.offset     = 0;
-conf.training_bits = randi([0,1],conf.n_carriers,1); 
-conf.training_symbol = 1 - 2 * conf.training_bits; % BPSK-mapped training sequence
-conf.BW_BB = ceil((conf.n_carriers +1)/2)*conf.spacing; 
+conf.bitsXsymb           = conf.n_carriers*2; % Because we are using QPSK
+conf.spacing             = 5; % spacing between symbols in Hz
+conf.os_factor           = ceil(conf.f_s / (conf.spacing * conf.n_carriers));   % OS factor of our system. It will feed OSIFFT and OSFFT.
+conf.rolloff             = 0.22;
+conf.os_factor_preamble  = 96; % conf.f_s/conf.f_sym; % oversampling factor for BPSK preamble
+conf.symbol_length       = conf.os_factor*conf.n_carriers;
+conf.cp_len              = conf.symbol_length/2; % length of cyclic prefix == half of the symbol length
+conf.tx_filterlen        = 20;
+conf.npreamble           = 100;
+conf.bitsps              = 16;   % bits per audio sample
+conf.offset              = 0;
+conf.training_bits       = randi([0,1],conf.n_carriers,1); 
+conf.training_symbol     = 1 - 2 * conf.training_bits; % BPSK-mapped training sequence
+conf.BW_BB               = ceil((conf.n_carriers +1)/2)*conf.spacing; 
 
 % Init Section
 % all calculations that you only have to do once
@@ -75,14 +76,11 @@ conf.BW_BB = ceil((conf.n_carriers +1)/2)*conf.spacing;
 if mod(conf.os_factor,1) ~= 0
    disp('WARNING: Sampling rate must be a multiple of the symbol rate'); 
 end
-conf.nsyms      = ceil(conf.nbits/conf.modulation_order);
+conf.nsyms = ceil(conf.nbits/conf.modulation_order);
 
 % Initialize result structure with zero
 res.biterrors   = zeros(conf.nframes,1);
 res.rxnbits     = zeros(conf.nframes,1);
-
-% TODO: To speed up your simulation pregenerate data you can reuse
-% beforehand.
 
 % Results    
 
@@ -92,24 +90,17 @@ for k=1:conf.nframes
     %txbits = randi([0 1],conf.nbits,1);
     txbits = tx_bit_stream((k-1)*conf.bitsperframe +1 : k*conf.bitsperframe);
 
-    % TODO: Implement tx() Transmit Function
-    % Generate Preamble
+    % Implementing tx() Transmit Function that forms the transmit signal
+    % with the preamble, the training data and the payload data
     txsignal = tx(txbits, conf, k);
-    % there is IFFT and CP insertion done inside these functions
     
-    % Normalization
-    % preamble  
+    % Normalization of the signal 
     avgEpreamble = sum(abs(txsignal).^2)/length(txsignal);        
     txsignal = (1/sqrt(avgEpreamble))*txsignal;
 
-
+    % Up converting the signal
     txsignal = up_conversion(txsignal, conf.f_c, conf.f_s);
 
-    % % % % % % % % % % % %
-    % Begin
-    % Audio Transmission
-    %
-    
     peakvalue       = max(abs(txsignal));
     normtxsignal    = txsignal / (peakvalue + 0.3);
     
@@ -118,7 +109,7 @@ for k=1:conf.nframes
     rawtxsignal = [  rawtxsignal  zeros(size(rawtxsignal)) ]; % add second channel: no signal
     txdur       = length(rawtxsignal)/conf.f_s; % calculate length of transmitted signal
     
-%     wavwrite(rawtxsignal,conf.f_s,16,'out.wav')   
+    % wavwrite(rawtxsignal,conf.f_s,16,'out.wav')   
     audiowrite('out.wav',rawtxsignal,conf.f_s)  
     
     % Platform native audio mode 
@@ -170,14 +161,9 @@ for k=1:conf.nframes
         rxsignal    = awgn_channel(rawrxsignal, SNRdB);
 
     end
-    
-
-    % End
-    % Audio Transmission   
-    % % % % % % % % % % % %
-    
-    % TODO: Implement rx() Receive Function
-    [rxbits, conf]       = rx(rxsignal,conf, k);
+    plot_signal_spectrum(txsignal, conf);
+    % Implementing rx() Receive Function
+    [rxbits, conf, h]       = rx(rxsignal,conf, k);
 
     rx_bit_stream((k-1)*conf.bitsperframe +1 : k*conf.bitsperframe) = rxbits;
 
@@ -224,3 +210,4 @@ end
 per = sum(res.biterrors > 0)/conf.nframes
 ber = sum(res.biterrors)/sum(res.rxnbits)
 
+plots(conf,h)
