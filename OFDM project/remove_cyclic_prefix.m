@@ -5,7 +5,7 @@ function rx_symbols_no_cp = remove_cyclic_prefix(rx_signal, start_idx, conf)
     % Ncp        : Cyclic prefix length
     % start_idx  : Start index of the first OFDM symbol
 
-    num_symbols = conf.n_payload_symbols+1;
+    num_symbols = conf.n_payload_symbols+conf.n_training_symbols;
     rx_symbols_no_cp = zeros(num_symbols*conf.symbol_length, 1);
 
     for i = 1:num_symbols

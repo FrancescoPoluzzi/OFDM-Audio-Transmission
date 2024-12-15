@@ -12,7 +12,7 @@ function parallel_data = serial_to_parallel_rx(serial_data, conf)
 
     num_carriers = conf.n_carriers;
     num_os_fft_symbols = num_carriers*conf.os_factor;
-    mc_symbol_len = conf.n_carriers * (1+conf.n_payload_symbols);                 % Total samples per OFDM symbol
+    mc_symbol_len = conf.n_carriers * (conf.n_training_symbols+conf.n_payload_symbols);                 % Total samples per OFDM symbol
     sc_symbol_len =  mc_symbol_len / num_carriers;       % Samples per carrier per OFDM symbol
 
     % Reshape the serial data into a matrix:

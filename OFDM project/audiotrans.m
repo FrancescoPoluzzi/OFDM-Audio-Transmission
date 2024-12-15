@@ -16,8 +16,6 @@ conf.audiosystem    = 'awgn'; % simulated awgn channel
 %conf.audiosystem   ='native'; 
 %conf.audiosystem   ='matlab';
 
-
-
 conf.what_to_send   = 'random'; % send random bits
 %conf.what_to_send  = 'image';  % send an image
 
@@ -40,6 +38,8 @@ elseif strcmp(conf.what_to_send,'random')
    
 end
 
+conf.tracking_method = 'Block';              % Options: 'Block', 'Block_Viterbi', 'Comb'
+conf.training_type = 'Block';     % Options 'Block, Comb'
 
 conf.f_s                = 48000;        % sampling frequency
 conf.f_sym              = 100;          % symbol rate (only for BPSK preamble)
@@ -47,11 +47,22 @@ conf.modulation_order   = 2;            % BPSK:1, QPSK:2
 conf.f_c                = 8000;         % carrier frequency
 conf.n_carriers         = 1024;
 conf.n_payload_symbols  = 4 ;           % Number of multi-carrier QPSK symbols per frame
-conf.bitsperframe = conf.n_carriers*conf.n_payload_symbols*2; 
+
+if strcmp(conf.training_type,'Block')
+    conf.block_interval = 2 ; % how many payload symbols each training symbol
+    conf.n_training_symbols = ceil(conf.n_payload_symbols/conf.block_interval);
+    conf.bitsperframe = conf.n_carriers*conf.n_payload_symbols*2; 
+
+elseif strcmp(conf.training_type,'Comb')
+    conf.comb_training_interval = 4; % each how many subcarriers to insert a training symbol
+    conf.n_training_symbols = 1; % we'll still send the training symbol at the beginning of the frame 
+    conf.n_trainings_per_symbol = n_carriers/conf.comb_training_interval;
+    conf.bitsperframe = (conf.n_carriers-conf.n_trainings_per_symbol)*conf.n_payload_symbols*2; 
+end
+
 conf.nframes = ceil(conf.nbits/conf.bitsperframe);       % number of frames to transmit
 conf.last_frame_padding =  conf.nframes * conf.bitsperframe - conf.nbits;
-conf.tracking_method = 'Block';              % Options: 'Block', 'Block_Viterbi', 'Comb'
-conf.training_type = 'Block';
+
 if conf.last_frame_padding > 0
     tx_bit_stream = [tx_bit_stream; zeros(conf.last_frame_padding, 1)];
 end
