@@ -1,75 +1,78 @@
 function [] = plots(conf, h)
-    % N - OFDM symbol length
 
-    % channel spectrum evaluation in time domain
-    % channel response evolves over time for a 
-    % specific subcarrier or set of subcarriers
-    N = conf.symbol_length;
+    N = conf.symbol_length; % OFDM symbol length
+    Ts = 1/conf.spacing;    % Time to send a sample of an OFDM symbol
+    time = 0 : Ts : (conf.n_payload_symbols + 1 - 1) * Ts; % Time vector
+
+    % Channel Spectrum Evaluation (Frequency Domain)
     figure;
     plot(abs(h)); % channel spectrum
     xlabel('Subcarrier Index');
     ylabel('Magnitude');
     title('Channel Frequency Response');
     grid on;
-    % channel spectrum evaluation in frequency domain
-    % the channel response varies across subcarriers
-    Ts = 1/conf.spacing;  % Time to send a sample of an OFDM symbol; 
-    time = 0 : Ts : (conf.n_payload_symbols + 1 - 1) * Ts;
-    for i = 1 : 32 : conf.n_carriers % define the nb subcarriers!!
-        plot(time, 20*log10(abs(h(i, :))./ max(abs(h(i, :))) ));
-        hold on;
-        f = conf.spacing * i;
-    end
-    xlabel('Time, s');
-    ylabel('Magnitude, dB')
-    title('Channel Magnitude over Time');
-    grid on;
-    for i = 1 : 32 : conf.n_carriers
-        plot(time, unwrap(angle(h(i, :))));
-        hold on;
-        f = conf.spacing * i;
-    end
-    for i = 1 : 32 : conf.n_carriers
-    % Check if there's variation in the phase
-    if any(abs(h(i, :)) > 1e-10)  % Check for significant magnitude
-        phase = unwrap(angle(h(i, :)));
-        plot(time, phase);
-        hold on;
-    else
-        disp(['Subcarrier ', num2str(i), ' has no significant channel response.']);
-    end
-    end
-    xlabel('Time, s');
-    ylabel('Phase, rad')
-    title('Channel Phase over Time');
-    grid on;
-    
-    % delay spread - time dispersion of the received signal due to
-    % multipath propagation
-    % Calculated from Channel Impulse Response - how the channel disperses
-    % over time
-  
+    % Channel Spectrum Evaluation Over Time (Magnitude)
     figure;
-    CIR = ifft(h,N,2);
+    for i = 1 : 32 : conf.n_carriers % Iterate over selected subcarriers
+        magnitude_dB = 20 * log10(abs(h(i, :)) ./ max(abs(h(i, :))));
+        plot(time, magnitude_dB);
+        hold on;
+    end
+    xlabel('Time (s)');
+    ylabel('Magnitude (dB)');
+    title('Channel Magnitude Evolution Over Time');
+    %legend(arrayfun(@(x) ['Subcarrier ', num2str(x)], 1:32:conf.n_carriers, 'UniformOutput', false));
+    grid on;
+
+    % Channel Spectrum Evaluation Over Time (Phase)
+    figure;
+    for i = 1 : 32 : conf.n_carriers
+        if any(abs(h(i, :)) > 1e-10) % Check for significant magnitude
+            phase = unwrap(angle(h(i, :)));
+            plot(time, phase);
+            hold on;
+        end
+    end
+    xlabel('Time (s)');
+    ylabel('Phase (radians)');
+    title('Channel Phase Evolution Over Time');
+    %legend(arrayfun(@(x) ['Subcarrier ', num2str(x)], 1:32:conf.n_carriers, 'UniformOutput', false));
+    grid on;
+
+    % Channel Impulse Response (CIR)
+    figure;
+    CIR = ifft(h, N, 2); % Compute CIR using IFFT
     plot(abs(CIR));
     xlabel('Sample Index (Time)');
     ylabel('Magnitude');
     title('Channel Impulse Response (CIR)');
     grid on;
-     % Estimate delay spread (time dispersion)
-    % Typically, delay spread is defined as the time between the first and last significant taps
-    significant_taps = find(abs(CIR) > 0.1 * max(abs(CIR)));
+
+    % Estimate Delay Spread
+    significant_taps = find(abs(CIR) > 0.1 * max(abs(CIR), [], 'all'));
     delay_spread = significant_taps(end) - significant_taps(1); % In samples
     disp(['Estimated Delay Spread: ', num2str(delay_spread), ' samples']);
 
-    % Channel evolution over time 
+    % Channel Evolution Over Time (Heatmap)
     figure;
-    imagesc(abs(h));  % Plot magnitude of channel evolution
+    imagesc(abs(h)); % Plot magnitude of channel evolution
     xlabel('Subcarrier Index');
     ylabel('Time Frame Index');
-    title('Channel Evolution Over Time');
+    title('Channel Magnitude Evolution Over Time');
     colorbar;
     grid on;
 
+    % Efficiency Calculations
+    T_CP = conf.cp_len;          % Current CP length
+    T_CP_new = delay_spread;        % Reduced CP length (based on delay spread)
+    T_useful = conf.symbol_length;  % Useful symbol duration
+
+    current_efficiency = T_useful / (T_useful + T_CP);
+    new_efficiency = T_useful / (T_useful + T_CP_new);
+    efficiency_increase = new_efficiency - current_efficiency;
+
+    disp(['Current Efficiency: ', num2str(current_efficiency * 100), '%']);
+    disp(['New Efficiency: ', num2str(new_efficiency * 100), '%']);
+    disp(['Efficiency Increase: ', num2str(efficiency_increase * 100), '%']);
 
 end

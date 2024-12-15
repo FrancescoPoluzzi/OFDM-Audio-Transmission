@@ -16,6 +16,8 @@ conf.audiosystem    = 'awgn'; % simulated awgn channel
 %conf.audiosystem   ='native'; 
 %conf.audiosystem   ='matlab';
 
+
+
 conf.what_to_send   = 'random'; % send random bits
 %conf.what_to_send  = 'image';  % send an image
 
@@ -48,7 +50,8 @@ conf.n_payload_symbols  = 4 ;           % Number of multi-carrier QPSK symbols p
 conf.bitsperframe = conf.n_carriers*conf.n_payload_symbols*2; 
 conf.nframes = ceil(conf.nbits/conf.bitsperframe);       % number of frames to transmit
 conf.last_frame_padding =  conf.nframes * conf.bitsperframe - conf.nbits;
-
+conf.tracking_method = 'Block';              % Options: 'Block', 'Block_Viterbi', 'Comb'
+conf.training_type = 'Block';
 if conf.last_frame_padding > 0
     tx_bit_stream = [tx_bit_stream; zeros(conf.last_frame_padding, 1)];
 end

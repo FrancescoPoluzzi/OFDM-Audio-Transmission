@@ -31,8 +31,20 @@ function [rxbits ,conf, h] = rx(rxsignal,conf, k)
     rx_training = rxsymbols_no_cp(:,1);
 
     rx_payload = rxsymbols_no_cp(:,2:end);
+    switch conf.tracking_method
+    case 'Block'
+        % Perform block tracking
+        [h, payload_eq] = channel_equalization(rx_payload, rx_training, conf.training_symbol);
 
-    [ h, payload_eq ] = channel_equalization(rx_payload, rx_training, conf.training_symbol);
+    case 'Block_Viterbi'
+        % Perform block Viterbi tracking
+        [h, payload_eq] = block_viterbi_tracking(rx_payload, rx_training, conf.training_symbol);
+
+    otherwise
+        error('Unknown tracking method specified in conf.tracking_method.');
+    end
+
+    %[ h, payload_eq ] = channel_equalization(rx_payload, rx_training, conf.training_symbol);
     payload_eq = parallel_to_serial(payload_eq);
 
     avg_E = sum(abs(payload_eq).^2)/length(payload_eq);
