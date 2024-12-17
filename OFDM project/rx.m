@@ -49,13 +49,14 @@ function [rxbits ,conf, h] = rx(rxsignal,conf, k)
         % The total number of payload symbols is conf.n_payload_symbols,
         % arranged in conf.n_training_symbols blocks each containing conf.block_interval symbols.
         payload_eq = zeros(conf.n_carriers, conf.n_payload_symbols);
+        h = zeros (conf.n_carriers, conf.n_payload_symbols+conf.n_training_symbols);
         for i = 1:conf.n_training_symbols
             training_col = 1 + (i-1)*(conf.block_interval+1);
             rx_training = rxsymbols_no_cp(:, training_col);
             payload_start_col = training_col + 1;
             payload_end_col   = training_col + conf.block_interval;
             rx_payload = rxsymbols_no_cp(:, payload_start_col:payload_end_col);
-            [h, eq_payload_block] = viterbi_tracking(rx_payload, rx_training, conf.training_symbol);
+            [eq_payload_block, h(:,training_col:payload_end_col)] = viterbi_tracking(rx_payload, rx_training, conf);
             payload_eq(:, (i-1)*conf.block_interval + 1 : i*conf.block_interval) = eq_payload_block;
         end
 

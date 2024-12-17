@@ -24,7 +24,8 @@ function payloadsymbols = remove_training_comb(serial_data, conf)
     payload_pos = 1; % index to fill into payloadsymbols
     for i = 1:conf.n_payload_symbols
         % Determine training positions for this MC symbol
-        training_positions = i : conf.comb_training_interval : conf.n_carriers;
+        first_training_position = mod(i-1, conf.comb_training_interval) + 1; % Ensure valid MATLAB index
+        training_positions = first_training_position : conf.comb_training_interval : conf.n_carriers;
         training_positions = training_positions(1:conf.n_trainings_per_symbol);
 
         % Identify the non-training positions

@@ -12,12 +12,14 @@
 
 % Configuration Values
 %conf.audiosystem   ='bypass'; % no channel at all
-conf.audiosystem    = 'awgn'; % simulated awgn channel
+%conf.audiosystem    = 'awgn'; % simulated awgn channel
 %conf.audiosystem   ='native'; 
-%conf.audiosystem   ='matlab';
+conf.audiosystem   ='matlab';
 
 conf.what_to_send   = 'random'; % send random bits
 %conf.what_to_send  = 'image';  % send an image
+
+conf.tracking_method = 'Block_Viterbi';              % Options: 'Block', 'Block_Viterbi', 'Comb'
 
 conf.show_plots = true; % set to true to show all the plots
 
@@ -39,16 +41,14 @@ elseif strcmp(conf.what_to_send,'random')
     tx_bit_stream = randi([0 1],conf.nbits,1);
 end
 
-conf.tracking_method = 'Block';              % Options: 'Block', 'Block_Viterbi', 'Comb'
-
 conf.f_s                = 48000;        % sampling frequency
 conf.f_sym              = 100;          % symbol rate (only for BPSK preamble)
 conf.modulation_order   = 2;            % BPSK:1, QPSK:2
 conf.f_c                = 8000;         % carrier frequency
 conf.n_carriers         = 1024;
-conf.n_payload_symbols  = 4 ;           % Number of multi-carrier QPSK symbols per frame
+conf.n_payload_symbols  = 8 ;           % Number of multi-carrier QPSK symbols per frame
 
-if strcmp(conf.tracking_method,'Block')
+if strcmp(conf.tracking_method,'Block')  | strcmp(conf.tracking_method,'Block_Viterbi')
     conf.block_interval = 4 ; % how many payload symbols each training symbol
     conf.n_training_symbols = ceil(conf.n_payload_symbols/conf.block_interval);
     conf.bitsperframe = conf.n_carriers*conf.n_payload_symbols*2; 
@@ -175,7 +175,6 @@ for k=1:conf.nframes
         rxsignal    = awgn_channel(rawrxsignal, SNRdB);
 
     end
-    plot_signal_spectrum(txsignal, conf);
     % Implementing rx() Receive Function
     [rxbits, conf, h]       = rx(rxsignal,conf, k);
 
@@ -192,15 +191,13 @@ for k=1:conf.nframes
             plot(txsignal);
             title('Sent Signal')
         end
+        plot_signal_spectrum(txsignal, rxsignal, conf);
     end
 
-    
     res.rxnbits(k)      = length(rxbits);  
     res.biterrors(k)    = sum(rxbits ~= txbits);
     
 end
-
-
 
 if strcmp(conf.what_to_send,'image')
 

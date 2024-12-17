@@ -24,7 +24,8 @@ function eqsymbols = channel_equalization_comb(rxsymbols, conf)
     % Iterate over each MC symbol (column)
     for i = 1:N_symbols
         % Identify the training positions for this symbol
-        training_positions = i : conf.comb_training_interval : N_carriers;
+        first_training_position = mod(i-1, conf.comb_training_interval) + 1; % Ensure valid MATLAB index
+        training_positions = first_training_position : conf.comb_training_interval : N_carriers;
         training_positions = training_positions(1:conf.n_trainings_per_symbol);
 
         % Extract the received training carriers

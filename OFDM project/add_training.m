@@ -1,6 +1,6 @@
 function tx_with_training = add_training(payloadsymbols, conf)
 
-    if strcmp(conf.tracking_method,'Block')
+    if strcmp(conf.tracking_method,'Block') | strcmp(conf.tracking_method,'Block_Viterbi')
         % The total length after adding training:
         % Each training section = (1 training block + conf.block_interval payload blocks)
         % Each block has conf.n_carriers samples.
@@ -31,7 +31,8 @@ function tx_with_training = add_training(payloadsymbols, conf)
             symbol_carriers = zeros(conf.n_carriers, 1);
             % Determine the training positions for this symbol:
             % Starting at index i, step by conf.comb_training_interval, until we have conf.n_trainings_per_symbol training carriers.
-            training_positions = i : conf.comb_training_interval : conf.n_carriers;
+            first_training_position = mod(i-1, conf.comb_training_interval) + 1; % Ensure valid MATLAB index
+            training_positions = first_training_position : conf.comb_training_interval : conf.n_carriers;
             training_positions = training_positions(1:conf.n_trainings_per_symbol); 
             % (Assumes the parameters are chosen so that we can pick the first conf.n_trainings_per_symbol entries without running out)           
             % Insert the training values at these positions

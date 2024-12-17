@@ -11,51 +11,47 @@ function [eq_symbols, hat_matrix] = viterbi_tracking(rx_symbols, training_symbol
 
     % Constants
     shift = zeros(conf.n_carriers, 6) + pi/2 * (-1:4); % Phase shift matrix
-    nb_tot_symbs = conf.n_payload_symbols + 1; % Total symbols (training + payload)
+    
+    training_rx = training_symbol;
 
     % Initialize phase estimation matrix
-    hat_matrix = zeros(conf.n_carriers, nb_tot_symbs);
+    hat_matrix = zeros(conf.n_carriers, conf.block_interval+1);
 
     % Initialize output matrix for equalized symbols
-    eq_symbols = zeros(conf.n_carriers, nb_tot_symbs);
-    nb_symbs_between_training = 2; % We set it??
-    % Loop over each set of training + payload symbols
-    for i = 1:nb_symbs_between_training + 1:nb_tot_symbs
+    eq_symbols = zeros(conf.n_carriers, conf.block_interval);
 
-        % Extract the training symbol from the received symbols
-        training_rx = rx_symbols(:, i);
+    % Estimate the channel using the training symbol
+    H_hat = training_rx ./ conf.training_symbol;
 
-        % Estimate the channel using the training symbol
-        H_hat = training_rx ./ training_symbol;
+    % Store the phase shift from the training symbol
+    hat_matrix(:,1) = mod(angle(H_hat), 2 * pi);
 
-        % Store the phase shift from the training symbol
-        hat_matrix(:, i) = mod(angle(H_hat), 2 * pi);
 
-        % Equalize the training symbol
-        eq_symbols(:, i) = training_rx .* exp(-1i * hat_matrix(:, i)) ./ abs(H_hat);
+    % Process subsequent payload symbols until the next training symbol
+    for j = 1 : conf.block_interval
+        % Retrieve the previous phase shift
+        theta_hat_prev = hat_matrix(:, j);
 
-        % Process subsequent payload symbols until the next training symbol
-        for j = i + 1 : min(i + conf.nb_symbs_between_training, nb_tot_symbs)
-            % Retrieve the previous phase shift
-            theta_hat_prev = hat_matrix(:, j - 1);
+        % Estimate the current phase shift
+        theta_hat = (1 / 4) * angle(-(rx_symbols(:, j).^4));
 
-            % Estimate the current phase shift
-            theta_hat = (1 / 4) * angle(-(rx_symbols(:, j).^4));
+      % Shift the estimated phase to align with the previous one
+        theta_hat_shifted = shift + theta_hat; % (n_carriers x 6)
+        theta_hat_prev_matrix = repmat(theta_hat_prev, 1, 6); % (n_carriers x 6)
+    
+        % Select the closest phase shift for each subcarrier
+        [~, idx] = min(abs(theta_hat_shifted - theta_hat_prev_matrix), [], 2); % (n_carriers x 1)
+        
+        % Correct theta_hat by selecting the closest shifted phase
+        % Vectorized approach replaces the for-loop
+        theta_hat_correct = theta_hat_shifted(sub2ind(size(theta_hat_shifted), (1:conf.n_carriers)', idx));
+        % theta_hat_correct is now a (n_carriers x 1) vector
+        
+        % Smooth the phase estimate and store it
+        hat_matrix(:, j+1) = mod(0.01 * theta_hat_correct + 0.99 * theta_hat_prev, 2 * pi);
 
-            % Shift the estimated phase to align with the previous one
-            theta_hat_shifted = shift + theta_hat;
-            theta_hat_prev_matrix = repmat(theta_hat_prev, 1, 6);
-
-            % Select the closest phase shift for each subcarrier
-            [~, idx] = min(abs(theta_hat_shifted - theta_hat_prev_matrix), [], 2);
-            for k = 1:conf.n_carriers
-                theta_hat_correct(k,1) = theta_hat_shifted(k, idx(k));
-            end
-            % Smooth the phase estimate and store it
-            hat_matrix(:, j) = mod(0.01 * theta_hat_correct + 0.99 * theta_hat_prev, 2 * pi);
-
-            % Equalize the payload symbol
-            eq_symbols(:, j) = rx_symbols(:, j) .* exp(-1i * hat_matrix(:, j)) ./ abs(H_hat);
-        end
+        % Equalize the payload symbol
+        eq_symbols(:, j) = rx_symbols(:, j) .* exp(-1i * hat_matrix(:, j+1)) ./ abs(H_hat);
     end
+    
 end

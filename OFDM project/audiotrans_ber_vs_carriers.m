@@ -12,14 +12,22 @@
 
 % Configuration Values
 %conf.audiosystem   ='bypass'; % no channel at all
-conf.audiosystem    = 'awgn'; % simulated awgn channel
+%conf.audiosystem    = 'awgn'; % simulated awgn channel
 %conf.audiosystem   ='native'; 
-%conf.audiosystem   ='matlab';
+conf.audiosystem   ='matlab';
 
-conf.what_to_send   = 'random'; % send random bits
-%conf.what_to_send  = 'image';  % send an image
+n_carriers_list = 2.^(8:12); % Powers of 2: 256, 512, 1024
+tracking_methods = {'Comb', 'Block_Viterbi', 'Block'};
+results = struct();
+ber_results = zeros(length(n_carriers_list), length(tracking_methods));
 
-conf.show_plots = false;
+for t_idx = 1:length(tracking_methods)
+    conf.tracking_method = tracking_methods{t_idx};
+    for n_idx = 1:length(n_carriers_list)
+        conf.n_carriers = n_carriers_list(n_idx);
+
+
+conf.show_plots = false; % set to true to show all the plots
 
 if strcmp(conf.what_to_send,'image')
     src_img = imread('image.jpg'); % read the image\
@@ -39,17 +47,15 @@ elseif strcmp(conf.what_to_send,'random')
     tx_bit_stream = randi([0 1],conf.nbits,1);
 end
 
-conf.tracking_method = 'Comb';              % Options: 'Block', 'Block_Viterbi', 'Comb'
-
 conf.f_s                = 48000;        % sampling frequency
 conf.f_sym              = 100;          % symbol rate (only for BPSK preamble)
 conf.modulation_order   = 2;            % BPSK:1, QPSK:2
 conf.f_c                = 8000;         % carrier frequency
-conf.n_carriers         = 1024;
-conf.n_payload_symbols  =  ;           % Number of multi-carrier QPSK symbols per frame
 
-if strcmp(conf.tracking_method,'Block')
-    conf.block_interval = 2 ; % how many payload symbols each training symbol
+conf.n_payload_symbols  = 8 ;           % Number of multi-carrier QPSK symbols per frame
+
+if strcmp(conf.tracking_method,'Block')  | strcmp(conf.tracking_method,'Block_Viterbi')
+    conf.block_interval = 4 ; % how many payload symbols each training symbol
     conf.n_training_symbols = ceil(conf.n_payload_symbols/conf.block_interval);
     conf.bitsperframe = conf.n_carriers*conf.n_payload_symbols*2; 
 
@@ -175,7 +181,6 @@ for k=1:conf.nframes
         rxsignal    = awgn_channel(rawrxsignal, SNRdB);
 
     end
-    plot_signal_spectrum(txsignal, conf);
     % Implementing rx() Receive Function
     [rxbits, conf, h]       = rx(rxsignal,conf, k);
 
@@ -192,15 +197,13 @@ for k=1:conf.nframes
             plot(txsignal);
             title('Sent Signal')
         end
+        plot_signal_spectrum(txsignal, rxsignal, conf);
     end
 
-    
     res.rxnbits(k)      = length(rxbits);  
     res.biterrors(k)    = sum(rxbits ~= txbits);
     
 end
-
-
 
 if strcmp(conf.what_to_send,'image')
 
@@ -226,6 +229,36 @@ end
 per = sum(res.biterrors > 0)/conf.nframes
 ber = sum(res.biterrors)/sum(res.rxnbits)
 
+        ber_results(n_idx, t_idx) = ber; % Store BER for this configuration
+
+
+    end
+end
+
 if(conf.show_plots == true)
     plots(conf,h)
 end
+
+% Plot BER vs. Number of Carriers and save the plot
+figure;
+hold on;
+for t_idx = 1:length(tracking_methods)
+    plot(n_carriers_list, ber_results(:, t_idx), '-o', 'DisplayName', tracking_methods{t_idx}, 'LineWidth', 1.5);
+end
+xlabel('Number of Carriers');
+ylabel('BER');
+title('BER vs. Number of Carriers for Different Tracking Methods');
+legend('Location', 'best');
+grid on;
+% Automatically scale the y-axis based on the data
+ylim('auto');
+
+hold off;
+
+% Create the directory if it doesn't exist
+if ~exist('plots', 'dir')
+    mkdir('plots');
+end
+
+% Save the plot as a PNG file without the axes toolbar
+exportgraphics(gcf, 'plots/ber_vs_n_carriers.png', 'Resolution', 300);
