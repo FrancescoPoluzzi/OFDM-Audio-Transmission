@@ -16,17 +16,16 @@
 %conf.audiosystem   ='native'; 
 conf.audiosystem   ='matlab';
 
-n_carriers_list = 2.^(8:12); % Powers of 2: 256, 512, 1024
-tracking_methods = {'Comb', 'Block_Viterbi', 'Block'};
+indices = 1:1:16; 
+tracking_methods = {'Block_Viterbi', 'Block'};
 results = struct();
-ber_results = zeros(length(n_carriers_list), length(tracking_methods));
+ber_results = zeros(length(indices), length(tracking_methods));
 conf.what_to_send='random';
 
 
 for t_idx = 1:length(tracking_methods)
     conf.tracking_method = tracking_methods{t_idx};
-    for n_idx = 1:length(n_carriers_list)
-        conf.n_carriers = n_carriers_list(n_idx);
+    conf.n_carriers = 1024;
 
 
 conf.show_plots = false; % set to true to show all the plots
@@ -45,7 +44,7 @@ if strcmp(conf.what_to_send,'image')
     conf.nbits      = length(tx_bit_stream);    % number of bits 
 
 elseif strcmp(conf.what_to_send,'random')
-    conf.nbits = 10000;
+    conf.nbits = 1024*16;
     tx_bit_stream = randi([0 1],conf.nbits,1);
 end
 
@@ -57,12 +56,12 @@ conf.f_c                = 8000;         % carrier frequency
 conf.n_payload_symbols  = 16 ;           % Number of multi-carrier QPSK symbols per frame
 
 if strcmp(conf.tracking_method,'Block')  | strcmp(conf.tracking_method,'Block_Viterbi')
-    conf.block_interval = 2 ; % how many payload symbols each training symbol
+    conf.block_interval = 16 ; % how many payload symbols each training symbol
     conf.n_training_symbols = ceil(conf.n_payload_symbols/conf.block_interval);
     conf.bitsperframe = conf.n_carriers*conf.n_payload_symbols*2; 
 
 elseif strcmp(conf.tracking_method,'Comb')
-    conf.comb_training_interval = 2; % each how many subcarriers to insert a training symbol
+    conf.comb_training_interval = 4; % each how many subcarriers to insert a training symbol
     conf.n_training_symbols = 1; % we'll still send the training symbol at the beginning of the frame 
     conf.n_trainings_per_symbol = conf.n_carriers/conf.comb_training_interval;
     conf.bitsperframe = (conf.n_carriers-conf.n_trainings_per_symbol)*conf.n_payload_symbols*2; 
@@ -230,11 +229,12 @@ end
 
 per = sum(res.biterrors > 0)/conf.nframes
 ber = sum(res.biterrors)/sum(res.rxnbits)
-
-        ber_results(n_idx, t_idx) = ber; % Store BER for this configuration
-
-
+    for ii = 1 : length(indices)
+        start_idx = 1 + (ii-1) * conf.n_carriers * 2;
+        end_idx = ii * conf.n_carriers * 2;
+        ber_results(ii, t_idx) = sum(rxbits(start_idx:end_idx)~= txbits(start_idx:end_idx))/ (conf.n_carriers * 2); % Store BER for this configuration
     end
+
 end
 
 if(conf.show_plots == true)
@@ -245,11 +245,11 @@ end
 figure;
 hold on;
 for t_idx = 1:length(tracking_methods)
-    plot(n_carriers_list, ber_results(:, t_idx), '-o', 'DisplayName',  tracking_methods{t_idx}, 'LineWidth', 1.5);
+    plot(indices, ber_results(:, t_idx), '-o', 'DisplayName',  tracking_methods{t_idx}, 'LineWidth', 1.5);
 end
-xlabel('Number of Carriers');
+xlabel('Symbols after last training');
 ylabel('BER');
-title('BER vs. Number of Carriers for Different Tracking Methods');
+title('Performance degradation over symbols with and without continuous phase estimation');
 legend('Location', 'best');
 grid on;
 % Automatically scale the y-axis based on the data
@@ -263,4 +263,4 @@ if ~exist('plots', 'dir')
 end
 
 % Save the plot as a PNG file without the axes toolbar
-exportgraphics(gcf, 'plots/ber_vs_n_carriers.png', 'Resolution', 300);
+exportgraphics(gcf, 'plots/performance_degradation.png', 'Resolution', 300);

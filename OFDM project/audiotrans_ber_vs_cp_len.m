@@ -15,18 +15,18 @@
 %conf.audiosystem    = 'awgn'; % simulated awgn channel
 %conf.audiosystem   ='native'; 
 conf.audiosystem   ='matlab';
-
-n_carriers_list = 2.^(8:12); % Powers of 2: 256, 512, 1024
-tracking_methods = {'Comb', 'Block_Viterbi', 'Block'};
-results = struct();
-ber_results = zeros(length(n_carriers_list), length(tracking_methods));
 conf.what_to_send='random';
+tracking_methods = {'Comb', 'Block_Viterbi', 'Block'};
 
+
+cp_rate_list = [0.2 0.3 0.4 0.5 0.6 0.7 0.8]; 
+results = struct();
+ber_results = zeros(length(cp_rate_list), length(tracking_methods));
 
 for t_idx = 1:length(tracking_methods)
     conf.tracking_method = tracking_methods{t_idx};
-    for n_idx = 1:length(n_carriers_list)
-        conf.n_carriers = n_carriers_list(n_idx);
+    for n_idx = 1:length(cp_rate_list)
+        conf.n_carriers = 1024;
 
 
 conf.show_plots = false; % set to true to show all the plots
@@ -83,7 +83,7 @@ conf.os_factor           = ceil(conf.f_s / (conf.spacing * conf.n_carriers));   
 conf.rolloff             = 0.22;
 conf.os_factor_preamble  = 96; % conf.f_s/conf.f_sym; % oversampling factor for BPSK preamble
 conf.symbol_length       = conf.os_factor*conf.n_carriers;
-conf.cp_len              = conf.symbol_length/2; % length of cyclic prefix == half of the symbol length
+conf.cp_len              = ceil(conf.symbol_length*cp_rate_list(n_idx)); % length of cyclic prefix == half of the symbol length
 conf.tx_filterlen        = 20;
 conf.npreamble           = 100;
 conf.bitsps              = 16;   % bits per audio sample
@@ -241,15 +241,18 @@ if(conf.show_plots == true)
     plots(conf,h)
 end
 
+efficiencies = conf.symbol_length ./ ( ceil(conf.symbol_length.*cp_rate_list) + conf.symbol_length );
+
 % Plot BER vs. Number of Carriers and save the plot
 figure;
 hold on;
 for t_idx = 1:length(tracking_methods)
-    plot(n_carriers_list, ber_results(:, t_idx), '-o', 'DisplayName',  tracking_methods{t_idx}, 'LineWidth', 1.5);
+    plot(efficiencies, ber_results(:, t_idx), '-o', 'DisplayName', tracking_methods{t_idx}, 'LineWidth', 1.5);
 end
-xlabel('Number of Carriers');
+xlabel('Spectral Efficiency (N/(N+Ncp)');
 ylabel('BER');
-title('BER vs. Number of Carriers for Different Tracking Methods');
+
+title('BER vs. Spectral Efficiency (depending on length of the Cyclic prefix)');
 legend('Location', 'best');
 grid on;
 % Automatically scale the y-axis based on the data
@@ -263,4 +266,4 @@ if ~exist('plots', 'dir')
 end
 
 % Save the plot as a PNG file without the axes toolbar
-exportgraphics(gcf, 'plots/ber_vs_n_carriers.png', 'Resolution', 300);
+exportgraphics(gcf, 'plots/ber_vs_spectral_efficiency.png', 'Resolution', 300);

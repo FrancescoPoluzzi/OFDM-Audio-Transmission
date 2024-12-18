@@ -16,17 +16,17 @@
 %conf.audiosystem   ='native'; 
 conf.audiosystem   ='matlab';
 
-n_carriers_list = 2.^(8:12); % Powers of 2: 256, 512, 1024
+spacing_list = [ 2  4  6  8  10]; % Powers of 2: 256, 512, 1024
+
 tracking_methods = {'Comb', 'Block_Viterbi', 'Block'};
 results = struct();
-ber_results = zeros(length(n_carriers_list), length(tracking_methods));
+ber_results = zeros(length(spacing_list), length(tracking_methods));
 conf.what_to_send='random';
-
 
 for t_idx = 1:length(tracking_methods)
     conf.tracking_method = tracking_methods{t_idx};
-    for n_idx = 1:length(n_carriers_list)
-        conf.n_carriers = n_carriers_list(n_idx);
+    for n_idx = 1:length(spacing_list)
+        conf.n_carriers = 1024;
 
 
 conf.show_plots = false; % set to true to show all the plots
@@ -54,7 +54,7 @@ conf.f_sym              = 100;          % symbol rate (only for BPSK preamble)
 conf.modulation_order   = 2;            % BPSK:1, QPSK:2
 conf.f_c                = 8000;         % carrier frequency
 
-conf.n_payload_symbols  = 16 ;           % Number of multi-carrier QPSK symbols per frame
+conf.n_payload_symbols  = 8 ;           % Number of multi-carrier QPSK symbols per frame
 
 if strcmp(conf.tracking_method,'Block')  | strcmp(conf.tracking_method,'Block_Viterbi')
     conf.block_interval = 2 ; % how many payload symbols each training symbol
@@ -78,7 +78,7 @@ end
 rx_bit_stream = zeros(size(tx_bit_stream));
 
 conf.bitsXsymb           = conf.n_carriers*2; % Because we are using QPSK
-conf.spacing             = 10; % spacing between symbols in Hz
+conf.spacing             = spacing_list(n_idx); % spacing between symbols in Hz
 conf.os_factor           = ceil(conf.f_s / (conf.spacing * conf.n_carriers));   % OS factor of our system. It will feed OSIFFT and OSFFT.
 conf.rolloff             = 0.22;
 conf.os_factor_preamble  = 96; % conf.f_s/conf.f_sym; % oversampling factor for BPSK preamble
@@ -245,11 +245,11 @@ end
 figure;
 hold on;
 for t_idx = 1:length(tracking_methods)
-    plot(n_carriers_list, ber_results(:, t_idx), '-o', 'DisplayName',  tracking_methods{t_idx}, 'LineWidth', 1.5);
+    plot(spacing_list, ber_results(:, t_idx), '-o', 'DisplayName', tracking_methods{t_idx}, 'LineWidth', 1.5);
 end
-xlabel('Number of Carriers');
+xlabel('Spacing between Carriers');
 ylabel('BER');
-title('BER vs. Number of Carriers for Different Tracking Methods');
+title('BER vs. Spacing between carriers (Hz) for Different Tracking Methods');
 legend('Location', 'best');
 grid on;
 % Automatically scale the y-axis based on the data
@@ -263,4 +263,4 @@ if ~exist('plots', 'dir')
 end
 
 % Save the plot as a PNG file without the axes toolbar
-exportgraphics(gcf, 'plots/ber_vs_n_carriers.png', 'Resolution', 300);
+exportgraphics(gcf, 'plots/ber_vs_spacing.png', 'Resolution', 300);

@@ -16,17 +16,17 @@
 %conf.audiosystem   ='native'; 
 conf.audiosystem   ='matlab';
 
-n_carriers_list = 2.^(8:12); % Powers of 2: 256, 512, 1024
+training_rate_list = [2 4 8 16 ]; % Powers of 2: 256, 512, 1024
+training_rate_list_plot =  1./training_rate_list; % Powers of 2: 256, 512, 1024
 tracking_methods = {'Comb', 'Block_Viterbi', 'Block'};
 results = struct();
-ber_results = zeros(length(n_carriers_list), length(tracking_methods));
+ber_results = zeros(length(training_rate_list), length(tracking_methods));
 conf.what_to_send='random';
-
 
 for t_idx = 1:length(tracking_methods)
     conf.tracking_method = tracking_methods{t_idx};
-    for n_idx = 1:length(n_carriers_list)
-        conf.n_carriers = n_carriers_list(n_idx);
+    for n_idx = 1:length(training_rate_list)
+        conf.n_carriers = 1024;
 
 
 conf.show_plots = false; % set to true to show all the plots
@@ -45,7 +45,7 @@ if strcmp(conf.what_to_send,'image')
     conf.nbits      = length(tx_bit_stream);    % number of bits 
 
 elseif strcmp(conf.what_to_send,'random')
-    conf.nbits = 10000;
+    conf.nbits = 20000;
     tx_bit_stream = randi([0 1],conf.nbits,1);
 end
 
@@ -57,12 +57,12 @@ conf.f_c                = 8000;         % carrier frequency
 conf.n_payload_symbols  = 16 ;           % Number of multi-carrier QPSK symbols per frame
 
 if strcmp(conf.tracking_method,'Block')  | strcmp(conf.tracking_method,'Block_Viterbi')
-    conf.block_interval = 2 ; % how many payload symbols each training symbol
+    conf.block_interval =  training_rate_list(n_idx) ; % how many payload symbols each training symbol
     conf.n_training_symbols = ceil(conf.n_payload_symbols/conf.block_interval);
     conf.bitsperframe = conf.n_carriers*conf.n_payload_symbols*2; 
 
 elseif strcmp(conf.tracking_method,'Comb')
-    conf.comb_training_interval = 2; % each how many subcarriers to insert a training symbol
+    conf.comb_training_interval =  training_rate_list(n_idx); % each how many subcarriers to insert a training symbol
     conf.n_training_symbols = 1; % we'll still send the training symbol at the beginning of the frame 
     conf.n_trainings_per_symbol = conf.n_carriers/conf.comb_training_interval;
     conf.bitsperframe = (conf.n_carriers-conf.n_trainings_per_symbol)*conf.n_payload_symbols*2; 
@@ -245,11 +245,11 @@ end
 figure;
 hold on;
 for t_idx = 1:length(tracking_methods)
-    plot(n_carriers_list, ber_results(:, t_idx), '-o', 'DisplayName',  tracking_methods{t_idx}, 'LineWidth', 1.5);
+    plot(training_rate_list_plot, ber_results(:, t_idx), '-o', 'DisplayName', tracking_methods{t_idx}, 'LineWidth', 1.5);
 end
-xlabel('Number of Carriers');
+xlabel('Training rate (how many training symbols per payload symbol)');
 ylabel('BER');
-title('BER vs. Number of Carriers for Different Tracking Methods');
+title('BER vs. Training rate for Different Tracking Methods');
 legend('Location', 'best');
 grid on;
 % Automatically scale the y-axis based on the data
@@ -263,4 +263,4 @@ if ~exist('plots', 'dir')
 end
 
 % Save the plot as a PNG file without the axes toolbar
-exportgraphics(gcf, 'plots/ber_vs_n_carriers.png', 'Resolution', 300);
+exportgraphics(gcf, 'plots/ber_vs_tainingrates.png', 'Resolution', 300);
