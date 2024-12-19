@@ -19,7 +19,7 @@ conf.what_to_send='random';
 tracking_methods = {'Comb', 'Block_Viterbi', 'Block'};
 
 
-cp_rate_list = [0.2 0.3 0.4 0.5 0.6 0.7 0.8]; 
+cp_rate_list = [ 0 0.01 0.05 0.1 0.15 0.2 0.25 0.3 0.4 0.5]; 
 results = struct();
 ber_results = zeros(length(cp_rate_list), length(tracking_methods));
 
@@ -45,7 +45,7 @@ if strcmp(conf.what_to_send,'image')
     conf.nbits      = length(tx_bit_stream);    % number of bits 
 
 elseif strcmp(conf.what_to_send,'random')
-    conf.nbits = 10000;
+    conf.nbits = 16*1024;
     tx_bit_stream = randi([0 1],conf.nbits,1);
 end
 
@@ -78,7 +78,7 @@ end
 rx_bit_stream = zeros(size(tx_bit_stream));
 
 conf.bitsXsymb           = conf.n_carriers*2; % Because we are using QPSK
-conf.spacing             = 10; % spacing between symbols in Hz
+conf.spacing             = 5; % spacing between symbols in Hz
 conf.os_factor           = ceil(conf.f_s / (conf.spacing * conf.n_carriers));   % OS factor of our system. It will feed OSIFFT and OSFFT.
 conf.rolloff             = 0.22;
 conf.os_factor_preamble  = 96; % conf.f_s/conf.f_sym; % oversampling factor for BPSK preamble
@@ -247,10 +247,11 @@ efficiencies = conf.symbol_length ./ ( ceil(conf.symbol_length.*cp_rate_list) + 
 figure;
 hold on;
 for t_idx = 1:length(tracking_methods)
-    plot(efficiencies, ber_results(:, t_idx), '-o', 'DisplayName', tracking_methods{t_idx}, 'LineWidth', 1.5);
+    semilogy(efficiencies, ber_results(:, t_idx), '-o', 'DisplayName', tracking_methods{t_idx}, 'LineWidth', 1.5);
 end
+set(gca, 'YScale', 'log');
 xlabel('Spectral Efficiency (N/(N+Ncp)');
-ylabel('BER');
+ylabel('log(BER)');
 
 title('BER vs. Spectral Efficiency (depending on length of the Cyclic prefix)');
 legend('Location', 'best');
@@ -266,4 +267,4 @@ if ~exist('plots', 'dir')
 end
 
 % Save the plot as a PNG file without the axes toolbar
-exportgraphics(gcf, 'plots/ber_vs_spectral_efficiency.png', 'Resolution', 300);
+exportgraphics(gcf, 'plots/ber_vs_spectral_efficiency_log.png', 'Resolution', 300);

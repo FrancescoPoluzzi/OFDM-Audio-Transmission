@@ -22,7 +22,7 @@ end
 
 % For every OFDM symbol take the last n CP samples and add them to
 % the CP colummn.
-cp_ofdm_symbol_parallel = zeros(conf.cp_len + conf.symbol_length, conf.n_payload_symbols+1);
+cp_ofdm_symbol_parallel = zeros(conf.cp_len + conf.symbol_length, conf.n_payload_symbols+conf.n_training_symbols);
 for i = 1: conf.n_payload_symbols+conf.n_training_symbols
     cyclic_prefix = ofdm_symbol_parallel(end-conf.cp_len+1:end, i);
     cp_ofdm_symbol_parallel(:,i) = [cyclic_prefix; ofdm_symbol_parallel(:,i)];

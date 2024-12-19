@@ -48,7 +48,7 @@ function [eq_symbols, hat_matrix] = viterbi_tracking(rx_symbols, training_symbol
         % theta_hat_correct is now a (n_carriers x 1) vector
         
         % Smooth the phase estimate and store it
-        hat_matrix(:, j+1) = mod(0.01 * theta_hat_correct + 0.99 * theta_hat_prev, 2 * pi);
+        hat_matrix(:, j+1) = mod(0.5 * theta_hat_correct + 0.5 * theta_hat_prev, 2 * pi);
 
         % Equalize the payload symbol
         eq_symbols(:, j) = rx_symbols(:, j) .* exp(-1i * hat_matrix(:, j+1)) ./ abs(H_hat);

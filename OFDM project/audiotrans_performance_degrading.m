@@ -16,7 +16,7 @@
 %conf.audiosystem   ='native'; 
 conf.audiosystem   ='matlab';
 
-indices = 1:1:64; 
+indices = 1:1:32; 
 tracking_methods = {'Block_Viterbi', 'Block'};
 results = struct();
 ber_results = zeros(length(indices), length(tracking_methods));
@@ -44,7 +44,7 @@ if strcmp(conf.what_to_send,'image')
     conf.nbits      = length(tx_bit_stream);    % number of bits 
 
 elseif strcmp(conf.what_to_send,'random')
-    conf.nbits = 1024*64;
+    conf.nbits = 1024*32;
     tx_bit_stream = randi([0 1],conf.nbits,1);
 end
 
@@ -53,10 +53,10 @@ conf.f_sym              = 100;          % symbol rate (only for BPSK preamble)
 conf.modulation_order   = 2;            % BPSK:1, QPSK:2
 conf.f_c                = 8000;         % carrier frequency
 
-conf.n_payload_symbols  = 64 ;           % Number of multi-carrier QPSK symbols per frame
+conf.n_payload_symbols  = 32 ;           % Number of multi-carrier QPSK symbols per frame
 
 if strcmp(conf.tracking_method,'Block')  | strcmp(conf.tracking_method,'Block_Viterbi')
-    conf.block_interval = 64 ; % how many payload symbols each training symbol
+    conf.block_interval = 32 ; % how many payload symbols each training symbol
     conf.n_training_symbols = ceil(conf.n_payload_symbols/conf.block_interval);
     conf.bitsperframe = conf.n_carriers*conf.n_payload_symbols*2; 
 
@@ -247,8 +247,9 @@ hold on;
 for t_idx = 1:length(tracking_methods)
     plot(indices, ber_results(:, t_idx), '-o', 'DisplayName',  tracking_methods{t_idx}, 'LineWidth', 1.5);
 end
+set(gca, 'YScale', 'log');
 xlabel('Symbols after last training');
-ylabel('BER');
+ylabel('log(BER)');
 title('Performance degradation over symbols with and without continuous phase estimation');
 legend('Location', 'best');
 grid on;
@@ -263,4 +264,4 @@ if ~exist('plots', 'dir')
 end
 
 % Save the plot as a PNG file without the axes toolbar
-exportgraphics(gcf, 'plots/performance_degradation_bigger.png', 'Resolution', 300);
+exportgraphics(gcf, 'plots/performance_degradation_moving.png', 'Resolution', 300);

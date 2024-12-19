@@ -245,10 +245,11 @@ end
 figure;
 hold on;
 for t_idx = 1:length(tracking_methods)
-    plot(spacing_list, ber_results(:, t_idx), '-o', 'DisplayName', tracking_methods{t_idx}, 'LineWidth', 1.5);
+    semilogy(spacing_list, ber_results(:, t_idx), '-o', 'DisplayName', tracking_methods{t_idx}, 'LineWidth', 1.5);
 end
+set(gca, 'YScale', 'log');
 xlabel('Spacing between Carriers');
-ylabel('BER');
+ylabel('log(BER)');
 title('BER vs. Spacing between carriers (Hz) for Different Tracking Methods');
 legend('Location', 'best');
 grid on;
@@ -263,4 +264,4 @@ if ~exist('plots', 'dir')
 end
 
 % Save the plot as a PNG file without the axes toolbar
-exportgraphics(gcf, 'plots/ber_vs_spacing.png', 'Resolution', 300);
+exportgraphics(gcf, 'plots/ber_vs_spacing_log.png', 'Resolution', 300);

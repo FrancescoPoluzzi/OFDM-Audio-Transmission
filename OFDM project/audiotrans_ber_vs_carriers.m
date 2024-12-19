@@ -45,7 +45,7 @@ if strcmp(conf.what_to_send,'image')
     conf.nbits      = length(tx_bit_stream);    % number of bits 
 
 elseif strcmp(conf.what_to_send,'random')
-    conf.nbits = 10000;
+    conf.nbits = 20000;
     tx_bit_stream = randi([0 1],conf.nbits,1);
 end
 
@@ -241,14 +241,16 @@ if(conf.show_plots == true)
     plots(conf,h)
 end
 
-% Plot BER vs. Number of Carriers and save the plot
+% Plot BER vs. Number of Carriers with logarithmic y-axis
 figure;
 hold on;
 for t_idx = 1:length(tracking_methods)
-    plot(n_carriers_list, ber_results(:, t_idx), '-o', 'DisplayName',  tracking_methods{t_idx}, 'LineWidth', 1.5);
+    % Use semilogy for log scale on the y-axis
+    semilogy(n_carriers_list, ber_results(:, t_idx), '-o', 'DisplayName', tracking_methods{t_idx}, 'LineWidth', 1.5);
 end
+set(gca, 'YScale', 'log');
 xlabel('Number of Carriers');
-ylabel('BER');
+ylabel('log(BER)');
 title('BER vs. Number of Carriers for Different Tracking Methods');
 legend('Location', 'best');
 grid on;
@@ -263,4 +265,5 @@ if ~exist('plots', 'dir')
 end
 
 % Save the plot as a PNG file without the axes toolbar
-exportgraphics(gcf, 'plots/ber_vs_n_carriers.png', 'Resolution', 300);
+exportgraphics(gcf, 'plots/ber_vs_n_carriers_log.png', 'Resolution', 300);
+
