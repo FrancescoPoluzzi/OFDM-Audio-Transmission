@@ -2,7 +2,7 @@ function [] = plots(conf, h)
 
     N = conf.symbol_length; % OFDM symbol length
     Ts = 1/conf.spacing;    % Time to send a sample of an OFDM symbol
-    time = 0 : Ts : (conf.n_payload_symbols + 1 ) * Ts; % Time vector
+    time = 0 : Ts : (conf.n_payload_symbols + conf.n_training_symbols -1 ) * Ts; % Time vector
 
     if strcmp(conf.tracking_method,'Comb') == false % with comb training we don't keep track of the channel
 
@@ -21,7 +21,7 @@ function [] = plots(conf, h)
         figure;
         for i = 1 : 32 : conf.n_carriers % Iterate over selected subcarriers
             magnitude_dB = 20 * log10(abs(h(i, :)) ./ max(abs(h(i, :))));
-            plot(time, magnitude_dB);
+            plot(time(1:length(magnitude_dB)), magnitude_dB);
             hold on;
         end
         xlabel('Time (s)');
@@ -71,6 +71,7 @@ function [] = plots(conf, h)
         plot(1:N, abs(CIR_first), 'LineWidth', 1.5);
         xlabel('Tap Index');
         ylabel('Magnitude');
+        ylim([0 1.5]);
         title(['Channel Impulse Response at Time Sample ', num2str(time_sample)]);
         grid on;
         xlim([1 N]);

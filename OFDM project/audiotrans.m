@@ -37,7 +37,7 @@ if strcmp(conf.what_to_send,'image')
     conf.nbits      = length(tx_bit_stream);    % number of bits 
 
 elseif strcmp(conf.what_to_send,'random')
-    conf.nbits = 10000;
+    conf.nbits = 8192;
     tx_bit_stream = randi([0 1],conf.nbits,1);
 end
 
@@ -46,7 +46,7 @@ conf.f_sym              = 100;          % symbol rate (only for BPSK preamble)
 conf.modulation_order   = 2;            % BPSK:1, QPSK:2
 conf.f_c                = 8000;         % carrier frequency
 conf.n_carriers         = 1024;
-conf.n_payload_symbols  = 8 ;           % Number of multi-carrier QPSK symbols per frame
+conf.n_payload_symbols  = 16 ;           % Number of multi-carrier QPSK symbols per frame
 
 if strcmp(conf.tracking_method,'Block')  | strcmp(conf.tracking_method,'Block_Viterbi')
     conf.block_interval = 4 ; % how many payload symbols each training symbol
@@ -70,7 +70,7 @@ end
 rx_bit_stream = zeros(size(tx_bit_stream));
 
 conf.bitsXsymb           = conf.n_carriers*2; % Because we are using QPSK
-conf.spacing             = 5; % spacing between symbols in Hz
+conf.spacing             = 10; % spacing between symbols in Hz
 conf.os_factor           = ceil(conf.f_s / (conf.spacing * conf.n_carriers));   % OS factor of our system. It will feed OSIFFT and OSFFT.
 conf.rolloff             = 0.22;
 conf.os_factor_preamble  = 96; % conf.f_s/conf.f_sym; % oversampling factor for BPSK preamble
@@ -225,4 +225,36 @@ ber = sum(res.biterrors)/sum(res.rxnbits)
 
 if(conf.show_plots == true)
     plots(conf,h)
+
+    %{ 
+
+    % SAVE THE PLOTS
+    if ~exist('plots', 'dir')
+        mkdir('plots');
+    end
+    
+    % Get all figure handles
+    figHandles = findall(0, 'Type', 'figure');
+    
+    % Predefined filenames based on the content of each plot
+    plotNames = {
+        'Average_Channel_Frequency_Response',         % First plot
+        'Channel_Magnitude_Evolution_Over_Time',      % Second plot
+        'Channel_Phase_Evolution_Over_Time',          % Third plot
+        'Channel_Impulse_Response_First_Sample',      % Fourth plot
+        'Channel_Magnitude_Evolution_Heatmap'         % Fifth plot
+    };
+    
+    % Save each figure with a predefined name
+    for idx = 1:length(figHandles)
+        if idx <= length(plotNames)
+            filename = plotNames{idx}; % Use predefined meaningful name
+        else
+            filename = ['Additional_Figure_' num2str(idx)]; % Generic name for extra figures
+        end
+        
+        % Save the figure as .png in the plots folder
+        saveas(figHandles(idx), fullfile('plots', [filename '.png']));
+    end
+%}
 end
