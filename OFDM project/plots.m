@@ -71,7 +71,7 @@ function [] = plots(conf, h)
         plot(1:N, abs(CIR_first), 'LineWidth', 1.5);
         xlabel('Tap Index');
         ylabel('Magnitude');
-        ylim([0 1.5]);
+        ylim([0 0.7]);
         title(['Channel Impulse Response at Time Sample ', num2str(time_sample)]);
         grid on;
         xlim([1 N]);
