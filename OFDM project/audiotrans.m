@@ -49,12 +49,12 @@ conf.n_carriers         = 1024;
 conf.n_payload_symbols  = 16 ;           % Number of multi-carrier QPSK symbols per frame
 
 if strcmp(conf.tracking_method,'Block')  | strcmp(conf.tracking_method,'Block_Viterbi')
-    conf.block_interval = 4 ; % how many payload symbols each training symbol
+    conf.block_interval = 2 ; % how many payload symbols each training symbol
     conf.n_training_symbols = ceil(conf.n_payload_symbols/conf.block_interval);
     conf.bitsperframe = conf.n_carriers*conf.n_payload_symbols*2; 
 
 elseif strcmp(conf.tracking_method,'Comb')
-    conf.comb_training_interval = 4; % each how many subcarriers to insert a training symbol
+    conf.comb_training_interval = 2; % each how many subcarriers to insert a training symbol
     conf.n_training_symbols = 1; % we'll still send the training symbol at the beginning of the frame 
     conf.n_trainings_per_symbol = conf.n_carriers/conf.comb_training_interval;
     conf.bitsperframe = (conf.n_carriers-conf.n_trainings_per_symbol)*conf.n_payload_symbols*2; 

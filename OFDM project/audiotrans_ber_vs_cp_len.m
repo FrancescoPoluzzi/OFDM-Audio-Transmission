@@ -78,7 +78,7 @@ end
 rx_bit_stream = zeros(size(tx_bit_stream));
 
 conf.bitsXsymb           = conf.n_carriers*2; % Because we are using QPSK
-conf.spacing             = 5; % spacing between symbols in Hz
+conf.spacing             = 3; % spacing between symbols in Hz
 conf.os_factor           = ceil(conf.f_s / (conf.spacing * conf.n_carriers));   % OS factor of our system. It will feed OSIFFT and OSFFT.
 conf.rolloff             = 0.22;
 conf.os_factor_preamble  = 96; % conf.f_s/conf.f_sym; % oversampling factor for BPSK preamble

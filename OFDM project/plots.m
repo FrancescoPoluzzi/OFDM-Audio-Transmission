@@ -33,29 +33,42 @@ function [] = plots(conf, h)
         %% Channel Spectrum Evaluation Over Time (Phase)
         figure;
         hold on; % Hold the plot for multiple lines
-        selected_subcarriers = 1:32:conf.n_carriers; % Select every 32nd subcarrier
-        num_selected = length(selected_subcarriers); % Number of selected subcarriers
+        
+        % Select every 32nd subcarrier for clarity
+        selected_subcarriers = 1:32:conf.n_carriers; 
+        num_selected = length(selected_subcarriers); 
+        
         % Preallocate for efficiency
-        magnitude_dB = zeros(num_selected, conf.n_payload_symbols+conf.n_training_symbols);
+        phase_rad = zeros(num_selected, conf.n_payload_symbols + conf.n_training_symbols);
+        
+        % Define time vector (ensure this is correctly defined in your context)
+        symbol_duration = 1 / conf.f_sym; % Duration of one symbol in seconds
+        total_symbols = conf.n_payload_symbols + conf.n_training_symbols;
+        time = (0:(total_symbols - 1)) * symbol_duration;
+        
+        % Generate distinct colors for each subcarrier
+        colors = lines(num_selected); 
+        
         for idx = 1:num_selected
-            i = selected_subcarriers(idx);
-            h_i = abs(h(i, :));
-            h_i_max = max(h_i);
+            i = selected_subcarriers(idx);    % Current subcarrier index
+            h_i = h(i, :);                    % Complex channel response for subcarrier 'i' across all symbols
             
-            % Avoid division by zero
-            if h_i_max > 1e-10
-                magnitude_dB(idx, :) = 20 * log10(h_i ./ h_i_max);
-            else
-                magnitude_dB(idx, :) = -Inf; % Assign -Inf dB if max is zero
-            end
+            % Compute phase in radians
+            phase_rad(idx, :) = angle(h_i);
             
-            plot(time, magnitude_dB(idx, :), 'LineWidth', 1.2);
+            % Optional: Unwrap phase to avoid discontinuities
+            % phase_rad(idx, :) = unwrap(angle(h_i));
+            
+            % Plot phase vs. time with distinct colors
+            plot(time, phase_rad(idx, :), 'LineWidth', 1.2, 'Color', colors(idx, :));
         end
-        xlabel('Time (s)');
-        ylabel('Magnitude (dB)');
-        title('Channel Magnitude Evolution Over Time');
+        % Labeling the axes
+        xlabel('Time (s)', 'FontSize', 12);
+        ylabel('Phase (rad)', 'FontSize', 12);
+        title('Channel Phase Evolution Over Time', 'FontSize', 14);
         grid on;
-        legend(arrayfun(@(x) ['Subcarrier ', num2str(x)], selected_subcarriers, 'UniformOutput', false), 'Location', 'best');
+        % subcarrier_labels = arrayfun(@(x) sprintf('Subcarrier %d', x), selected_subcarriers, 'UniformOutput', false);
+        % legend(subcarrier_labels, 'Location', 'best');
         hold off;
     
         %% Channel Impulse Response (CIR)
