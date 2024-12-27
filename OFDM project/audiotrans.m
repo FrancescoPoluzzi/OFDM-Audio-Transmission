@@ -12,16 +12,16 @@
 
 % Configuration Values
 %conf.audiosystem   ='bypass'; % no channel at all
-%conf.audiosystem    = 'awgn'; % simulated awgn channel
+conf.audiosystem    = 'awgn'; % simulated awgn channel
 %conf.audiosystem   ='native'; 
-conf.audiosystem   ='matlab';
+%conf.audiosystem   ='matlab';
 
 conf.what_to_send   = 'random'; % send random bits
 %conf.what_to_send  = 'image';  % send an image
 
 conf.tracking_method = 'Block_Viterbi';              % Options: 'Block', 'Block_Viterbi', 'Comb'
 
-conf.show_plots = true; % set to true to show all the plots
+conf.show_plots = false; % set to true to show all the plots
 
 if strcmp(conf.what_to_send,'image')
     src_img = imread('image.jpg'); % read the image\
@@ -226,8 +226,6 @@ ber = sum(res.biterrors)/sum(res.rxnbits)
 if(conf.show_plots == true)
     plots(conf,h)
 
-    %{ 
-
     % SAVE THE PLOTS
     if ~exist('plots', 'dir')
         mkdir('plots');
@@ -256,5 +254,6 @@ if(conf.show_plots == true)
         % Save the figure as .png in the plots folder
         saveas(figHandles(idx), fullfile('plots', [filename '.png']));
     end
-%}
+
+
 end
